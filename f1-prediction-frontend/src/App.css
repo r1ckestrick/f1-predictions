@@ -1,0 +1,125 @@
+/* Estilos Generales */
+body {
+  background-color: #1a202c;
+  color: white;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+/* Contenedor principal */
+.p-6 {
+  padding: 24px;
+}
+
+/* Fondo de la tabla */
+.bg-gray-800 {
+  background-color: #2d3748;
+  padding: 16px;
+  border-radius: 8px;
+  width: 100%;
+  max-width: 500px; /* Ajuste para móviles */
+  margin: auto;
+}
+
+/* Encabezados */
+.text-xl {
+  font-size: 1.5rem;
+}
+
+.font-bold {
+  font-weight: bold;
+}
+
+/* Selector de carrera */
+select {
+  padding: 8px;
+  border-radius: 4px;
+  background-color: #4a5568;
+  color: white;
+  border: none;
+  margin-top: 8px;
+}
+
+/* Tabla */
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+th, td {
+  text-align: center;
+  padding: 6px;
+  border: 1px solid #4a5568;
+  white-space: nowrap;
+}
+
+/* Encabezados de la tabla */
+th {
+  background-color: #4a5568;
+  color: white;
+}
+
+/* Colores de acierto y error */
+.correct {
+  background-color: #28a745 !important; /* Verde */
+  color: white;
+  font-weight: bold;
+}
+
+.incorrect {
+  background-color: #dc3545 !important; /* Rojo */
+  color: white;
+  font-weight: bold;
+}
+
+/* Colores de los bonos */
+.bonus-active {
+  background-color: #ffd700 !important; /* Dorado si se activa */
+  color: black;
+  font-weight: bold;
+}
+
+.bonus-inactive {
+  background-color: #4a5568 !important; /* Gris si no se activa */
+  color: white;
+}
+
+/* Ajuste para que la tabla no se corte en pantallas pequeñas */
+@media (max-width: 600px) {
+  .bg-gray-800 {
+    max-width: 350px;
+  }
+
+  th, td {
+    font-size: 12px;
+    padding: 4px;
+  }
+}
+
+/* 🔥 Ajusta los colores de aciertos y bonos */
+.bg-green-500 {
+  background-color: #28a745 !important;
+}
+
+.bg-red-500 {
+  background-color: #dc3545 !important;
+}
+
+.text-white {
+  color: white !important;
+}
+
+.font-bold {
+  font-weight: bold !important;
+}
+
+.prediction-input {
+  width: 100%; /* O un tamaño fijo como width: 50px; */
+  min-width: 50px;
+  text-align: center;
+  background-color: #374151; /* Un color oscuro similar al fondo */
+  color: white;
+  border: 1px solid #4b5563; /* Un borde sutil */
+  padding: 4px;
+  border-radius: 4px;
+}
