@@ -15,6 +15,7 @@ export default function App() {
   const [editedPredictions, setEditedPredictions] = useState({}); // Almacena las ediciones
   const [raceInfo, setRaceInfo] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
+  const [API_URL] = process.env.REACT_APP_API_URL;
 
 
   
@@ -63,7 +64,7 @@ export default function App() {
   const [drivers, setDrivers] = useState([]);
 
   const fetchDrivers = () => {
-    fetch("http://127.0.0.1:5000/get_drivers/2024") // Ajusta la URL según corresponda
+    fetch("https://f1predictionapp-production.up.railway.app/get_drivers/2024") // Ajusta la URL según corresponda
       .then((res) => res.json())
       .then((data) => {
         if (data.drivers) {
@@ -74,7 +75,7 @@ export default function App() {
   };
   
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/leaderboard")
+    fetch("(https://f1predictionapp-production.up.railway.app)/leaderboard")
       .then((res) => res.json())
       .then((data) => {
         setLeaderboard(data);
@@ -84,7 +85,7 @@ export default function App() {
   
 
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/get_all_races/2024")
+    fetch("https://f1predictionapp-production.up.railway.app/get_all_races/2024")
       .then((res) => res.json())
       .then((data) => {
         if (data.races && data.races.length > 0) {
@@ -99,7 +100,7 @@ export default function App() {
   useEffect(() => {
     if (!selectedRace) return;
 
-    fetch(`http://127.0.0.1:5000/get_race_info/2024/${selectedRace}`)
+    fetch(`https://f1predictionapp-production.up.railway.app/get_race_info/2024/${selectedRace}`)
     .then((res) => res.json())
     .then((data) => {
       if (data && data.raceName) {
@@ -122,7 +123,7 @@ export default function App() {
    });
   
     
- fetch("http://127.0.0.1:5000/get_predictions")
+ fetch("https://f1predictionapp-production.up.railway.app/get_predictions")
    .then((res) => res.json())
    .then((data) => {
      const racePredictions = data.predictions.filter(p => p.race === selectedRace);
@@ -130,7 +131,7 @@ export default function App() {
    })
    .catch(() => setPredictions([]));
 
- fetch(`http://127.0.0.1:5000/get_race_results/2024/${selectedRace}`)
+ fetch(`https://f1predictionapp-production.up.railway.app/get_race_results/2024/${selectedRace}`)
    .then((res) => res.ok ? res.json() : {})
    .then((data) => {
      if (data.MRData && data.MRData.RaceTable.Races.length > 0) {
@@ -167,7 +168,7 @@ export default function App() {
 }, [selectedRace]);
   
   useEffect(() => {
-    fetch("http://127.0.0.1:5000/get_all_races/2024")
+    fetch("https://f1predictionapp-production.up.railway.app/get_all_races/2024")
       .then((res) => res.json())
       .then((data) => {
         if (data.races && data.races.length > 0) {
@@ -272,7 +273,7 @@ const formatDate = (dateStr) => {
   }
 
   const handleSavePredictions = () => {
-    fetch("http://127.0.0.1:5000/save_predictions", {
+    fetch("https://f1predictionapp-production.up.railway.app/save_predictions", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -286,7 +287,7 @@ const formatDate = (dateStr) => {
         alert("✅ Predicción guardada!");
 
         // Recargar predicciones después de guardar
-        fetch("http://127.0.0.1:5000/get_predictions")
+        fetch("https://f1predictionapp-production.up.railway.app/get_predictions")
         .then((res) => res.json())
         .then((data) => {
           const racePredictions = data.predictions.filter(p => p.race === selectedRace);

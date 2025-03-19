@@ -6,6 +6,7 @@ import os
 
 # Inicializar la aplicación Flask
 app = Flask(__name__)
+
 CORS(app)  # Esto habilita CORS en toda la app
 
 # Configurar base de datos
