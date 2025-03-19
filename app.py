@@ -23,6 +23,11 @@ class User(db.Model):
 # Permite CORS en todas las rutas
 CORS(app, resources={r"/*": {"origins": "*"}})
 
+# REVISAR SI ANDA EL RAILWAY
+@app.route("/")
+def home():
+    return "Backend funcionando en Railway 🚀"
+
 @app.route("/save_predictions", methods=["POST"])
 def save_predictions():
     data = request.json
