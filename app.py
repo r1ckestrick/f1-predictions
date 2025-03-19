@@ -181,6 +181,37 @@ def get_race_results(season, round):
         return response.json()
     return None
 
+#función que calcule y guarde los puntos después de cada carrera.
+def calculate_points(prediction, race_results):
+    """Calcula los puntos de una predicción en base a los resultados reales"""
+    points = 0
+
+    # Comparar cada predicción con los resultados reales
+    if prediction.pole == race_results.get("pole"):
+        points += 10
+    if prediction.p1 == race_results.get("p1"):
+        points += 10
+    if prediction.p2 == race_results.get("p2"):
+        points += 10
+    if prediction.p3 == race_results.get("p3"):
+        points += 10
+    if prediction.fastest_lap == race_results.get("fastest_lap"):
+        points += 10
+    if prediction.most_overtakes == race_results.get("most_overtakes"):
+        points += 10
+    if prediction.dnf == race_results.get("dnf"):
+        points += 10
+    if prediction.driver_of_day == race_results.get("driver_of_day"):
+        points += 10
+
+    # Bonos
+    podium = {race_results.get("p1"), race_results.get("p2"), race_results.get("p3")}
+    predicted_podium = {prediction.p1, prediction.p2, prediction.p3}
+    if podium == predicted_podium:
+        points *= 2  # Bono por acertar el podio exacto
+
+    prediction.points = points
+
 #  **Función para extraer datos clave de una carrera**
 def extract_race_summary(results):
     race_data = results.get('MRData', {}).get('RaceTable', {}).get('Races', [{}])[0]
@@ -316,5 +347,8 @@ def get_race_info(season, round):
     return jsonify({"error": "No se pudo obtener la información de la carrera"}), 500
 
 #  **Ejecutar la aplicación Flask**
-if __name__ == '__main__':
-    app.run(debug=True)
+if __name__ == "__main__":
+    from os import getenv
+    port = int(getenv("PORT", 5000))  # Usa el puerto asignado por Railway
+    app.run(host="0.0.0.0", port=port, debug=True)
+
