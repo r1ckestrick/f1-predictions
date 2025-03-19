@@ -281,6 +281,20 @@ def get_race_results(season, round):
         return jsonify(response.json())
     return jsonify({"error": "No se pudieron obtener los resultados"}), 500
 
+# Obtener la última temporada disponible
+@app.route('/get_latest_season', methods=['GET'])
+def get_latest_season():
+    url = "https://ergast.com/api/f1/seasons.json?limit=100"
+    response = requests.get(url)
+    
+    if response.status_code == 200:
+        data = response.json()
+        seasons = data.get("MRData", {}).get("SeasonTable", {}).get("Seasons", [])
+        latest_season = seasons[-1]["season"] if seasons else "2024"  # Fallback si no hay datos
+        return jsonify({"latest_season": latest_season})
+    
+    return jsonify({"error": "No se pudo obtener la última temporada"}), 500
+
 # Ruta para obtener las predicciones de una carrera específica
 @app.route('/get_race_predictions/<int:season>/<int:round>', methods=['GET'])
 def get_race_predictions(season, round):
