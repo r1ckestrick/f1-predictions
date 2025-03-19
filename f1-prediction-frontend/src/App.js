@@ -16,6 +16,8 @@ export default function App() {
   const [editedPredictions, setEditedPredictions] = useState({}); // Almacena las ediciones
   const [raceInfo, setRaceInfo] = useState(null);
   const [leaderboard, setLeaderboard] = useState([])
+  const [season, setSeason] = useState("2025"); // Default
+  const [availableSeasons, setAvailableSeasons] = useState([]);
   
 
 
@@ -80,7 +82,19 @@ export default function App() {
       .catch((error) => console.error("Error obteniendo leaderboard:", error));
   }, []);
   
-
+  useEffect(() => {
+    fetch(`${API_URL}/get_latest_season`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.latest_season) {
+          const latest = parseInt(data.latest_season);
+          setSeason(latest);
+          setAvailableSeasons(Array.from({ length: latest - 1949 }, (_, i) => latest - i)); // Genera años desde 1950 hasta la última
+        }
+      })
+      .catch((err) => console.error("Error obteniendo las temporadas:", err));
+  }, []);
+  
   useEffect(() => {
     fetch(`${API_URL}/get_all_races/2024`)
       .then((res) => res.json())
@@ -93,6 +107,7 @@ export default function App() {
       .catch((error) => console.error("Error al obtener lista de carreras:", error))
       .finally(() => setLoading(false));
   }, []);
+
 
   useEffect(() => {
     if (!selectedRace) return;
@@ -322,7 +337,15 @@ return (
 
   {leaderboard.length >= 3 ? (
     <div className="flex justify-center items-end space-x-6">
-      
+
+      {/* Selector de temporada */}
+      <label htmlFor="season">Selecciona una temporada:</label>
+      <select id="season" value={season} onChange={(e) => setSeason(e.target.value)}>
+        {availableSeasons.map((year) => (
+          <option key={year} value={year}>{year}</option>
+        ))}
+      </select>
+
       {/* 🥈 Segundo Lugar */}
       <div className="flex flex-col items-center w-1/4">
         <img src="/images/tato.png" alt="TATO" className="h-32 rounded-full border-4 border-gray-400" />
