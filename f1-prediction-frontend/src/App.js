@@ -1,5 +1,5 @@
 import "./App.css";  // Asegura que los estilos se carguen correctamente
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import API_URL from "./config.js"
 
 export default function App() {
@@ -17,6 +17,7 @@ export default function App() {
   const [raceInfo, setRaceInfo] = useState(null);
   const [leaderboard, setLeaderboard] = useState([])
   const [season, setSeason] = useState("2025"); // Default
+  const [selectedSeason] = useState("2025"); // Por defecto, la última temporada disponible
   const [availableSeasons, setAvailableSeasons] = useState([]);
   
 
@@ -62,17 +63,33 @@ export default function App() {
 
   const [drivers, setDrivers] = useState([]);
 
-  const fetchDrivers = () => {
-    fetch(`${API_URL}/get_drivers/2024`) // Ajusta la URL según corresponda
+  const fetchDrivers = useCallback(() => {
+    fetch(`${API_URL}/get_drivers/${selectedSeason}`)
       .then((res) => res.json())
       .then((data) => {
-        if (data.drivers) {
-          setDrivers(data.drivers);
+        console.log("Pilotos obtenidos:", data);
+        setDrivers(data);
+      })
+      .catch((error) => console.error("Error al obtener pilotos:", error));
+}, [selectedSeason]); // 📌 Dependencia: `selectedSeason` 
+  
+  useEffect(() => {
+    if (!selectedSeason) return; // Evita errores si aún no se ha seleccionado una temporada
+    fetch(`${API_URL}/get_all_races/${selectedSeason}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.races && data.races.length > 0) {
+          console.log("Temporada seleccionada:", selectedSeason);
+          setRaces(data.races);
+          setSelectedRace(data.races[0].round);
         }
       })
-      .catch((error) => console.error("Error obteniendo la lista de pilotos:", error));
-  };
+      .catch((error) => console.error("Error al obtener lista de carreras:", error))
+      .finally(() => setLoading(false));
   
+    fetchDrivers(); // 📌 Llamamos a la función que obtiene los pilotos  
+  }, [selectedSeason, fetchDrivers]); // ⚠️ Aquí agregamos selectedSeason como dependencia
+
   useEffect(() => {
     fetch(`(${API_URL})/leaderboard`)
       .then((res) => res.json())
@@ -96,23 +113,23 @@ export default function App() {
   }, []);
   
   useEffect(() => {
-    fetch(`${API_URL}/get_all_races/2024`)
+    fetch(`${API_URL}/get_all_races/${selectedSeason}`)
       .then((res) => res.json())
       .then((data) => {
         if (data.races && data.races.length > 0) {
-          setRaces(data.races);
+                  setRaces(data.races);
           setSelectedRace(data.races[0].round);
         }
       })
       .catch((error) => console.error("Error al obtener lista de carreras:", error))
       .finally(() => setLoading(false));
-  }, []);
+  }, [selectedSeason]); // ✅ Aquí está bien, React debería dejar de quejarse
 
 
   useEffect(() => {
     if (!selectedRace) return;
 
-    fetch(`${API_URL}/get_race_info/2024/${selectedRace}`)
+    fetch(`${API_URL}/get_race_info/${selectedSeason}/${selectedRace}`)
     .then((res) => res.json())
     .then((data) => {
       if (data && data.raceName) {
@@ -143,7 +160,7 @@ export default function App() {
    })
    .catch(() => setPredictions([]));
 
- fetch(`${API_URL}/get_race_results/2024/${selectedRace}`)
+ fetch(`${API_URL}/get_race_results/${selectedSeason}/${selectedRace}`)
    .then((res) => res.ok ? res.json() : {})
    .then((data) => {
      if (data.MRData && data.MRData.RaceTable.Races.length > 0) {
@@ -177,22 +194,7 @@ export default function App() {
    })
    .catch(() => setRaceResults({}))
    .finally(() => setLoading(false));
-}, [selectedRace]);
-  
-  useEffect(() => {
-    fetch(`${API_URL}/get_all_races/2024`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.races && data.races.length > 0) {
-          setRaces(data.races);
-          setSelectedRace(data.races[0].round);
-        }
-      })
-      .catch((error) => console.error("Error al obtener lista de carreras:", error))
-      .finally(() => setLoading(false));
-  
-    fetchDrivers(); // 📌 Llamamos a la función que obtiene los pilotos  
-  }, []);
+}, [selectedRace, selectedSeason]); // ✅ Aquí está bien, React debería dejar de quejarse
 
   useEffect(() => {
     let maxHits = 0;
@@ -335,17 +337,16 @@ return (
 <div className="bg-gray-800 p-4 rounded shadow-md text-center mb-6">
   <h2 className="text-xl font-bold mb-2">🏆 Prediction Party F1 2024 🏆</h2>
 
-  {leaderboard.length >= 3 ? (
-    <div className="flex justify-center items-end space-x-6">
-
-      {/* Selector de temporada */}
-      <label htmlFor="season">Selecciona una temporada:</label>
+ {/* Selector de temporada */}
+ <label htmlFor="season">Selecciona una temporada:</label>
       <select id="season" value={season} onChange={(e) => setSeason(e.target.value)}>
         {availableSeasons.map((year) => (
           <option key={year} value={year}>{year}</option>
         ))}
       </select>
 
+  {leaderboard.length >= 3 ? (
+    <div className="flex justify-center items-end space-x-6">
       {/* 🥈 Segundo Lugar */}
       <div className="flex flex-col items-center w-1/4">
         <img src="/images/tato.png" alt="TATO" className="h-32 rounded-full border-4 border-gray-400" />
