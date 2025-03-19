@@ -1,5 +1,6 @@
 import "./App.css";  // Asegura que los estilos se carguen correctamente
-import { useState, useEffect } from "react";
+import { useState, useEffect } from "react"
+import API_URL from "./config.js"
 
 export default function App() {
   const [selectedRace, setSelectedRace] = useState("");
@@ -14,11 +15,7 @@ export default function App() {
   const [isEditing, setIsEditing] = useState(false); // Modo edición activado/desactivado
   const [editedPredictions, setEditedPredictions] = useState({}); // Almacena las ediciones
   const [raceInfo, setRaceInfo] = useState(null);
-  const [leaderboard, setLeaderboard] = useState([]);
-  const [API_URL] = process.env.REACT_APP_API_URL;
-
-
-  
+  const [leaderboard, setLeaderboard] = useState([])
   
 
 
@@ -64,7 +61,7 @@ export default function App() {
   const [drivers, setDrivers] = useState([]);
 
   const fetchDrivers = () => {
-    fetch("https://f1predictionapp-production.up.railway.app/get_drivers/2024") // Ajusta la URL según corresponda
+    fetch(`${API_URL}/get_drivers/2024`) // Ajusta la URL según corresponda
       .then((res) => res.json())
       .then((data) => {
         if (data.drivers) {
@@ -75,7 +72,7 @@ export default function App() {
   };
   
   useEffect(() => {
-    fetch("(https://f1predictionapp-production.up.railway.app)/leaderboard")
+    fetch(`(${API_URL})/leaderboard`)
       .then((res) => res.json())
       .then((data) => {
         setLeaderboard(data);
@@ -85,7 +82,7 @@ export default function App() {
   
 
   useEffect(() => {
-    fetch("https://f1predictionapp-production.up.railway.app/get_all_races/2024")
+    fetch(`${API_URL}/get_all_races/2024`)
       .then((res) => res.json())
       .then((data) => {
         if (data.races && data.races.length > 0) {
@@ -100,7 +97,7 @@ export default function App() {
   useEffect(() => {
     if (!selectedRace) return;
 
-    fetch(`https://f1predictionapp-production.up.railway.app/get_race_info/2024/${selectedRace}`)
+    fetch(`${API_URL}/get_race_info/2024/${selectedRace}`)
     .then((res) => res.json())
     .then((data) => {
       if (data && data.raceName) {
@@ -123,7 +120,7 @@ export default function App() {
    });
   
     
- fetch("https://f1predictionapp-production.up.railway.app/get_predictions")
+ fetch(`${API_URL}/get_predictions`)
    .then((res) => res.json())
    .then((data) => {
      const racePredictions = data.predictions.filter(p => p.race === selectedRace);
@@ -131,7 +128,7 @@ export default function App() {
    })
    .catch(() => setPredictions([]));
 
- fetch(`https://f1predictionapp-production.up.railway.app/get_race_results/2024/${selectedRace}`)
+ fetch(`${API_URL}/get_race_results/2024/${selectedRace}`)
    .then((res) => res.ok ? res.json() : {})
    .then((data) => {
      if (data.MRData && data.MRData.RaceTable.Races.length > 0) {
@@ -168,7 +165,7 @@ export default function App() {
 }, [selectedRace]);
   
   useEffect(() => {
-    fetch("https://f1predictionapp-production.up.railway.app/get_all_races/2024")
+    fetch(`${API_URL}/get_all_races/2024`)
       .then((res) => res.json())
       .then((data) => {
         if (data.races && data.races.length > 0) {
@@ -273,7 +270,7 @@ const formatDate = (dateStr) => {
   }
 
   const handleSavePredictions = () => {
-    fetch("https://f1predictionapp-production.up.railway.app/save_predictions", {
+    fetch(`${API_URL}/save_predictions`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
@@ -287,7 +284,7 @@ const formatDate = (dateStr) => {
         alert("✅ Predicción guardada!");
 
         // Recargar predicciones después de guardar
-        fetch("https://f1predictionapp-production.up.railway.app/get_predictions")
+        fetch(`${API_URL}/get_predictions`)
         .then((res) => res.json())
         .then((data) => {
           const racePredictions = data.predictions.filter(p => p.race === selectedRace);
