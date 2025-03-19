@@ -2,6 +2,8 @@
   "name": "f1-prediction-frontend",
   "version": "0.1.0",
   "private": true,
+  "proxy": "https://f1predictionapp-production.up.railway.app",
+  
   "dependencies": {
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "^6.6.3",
