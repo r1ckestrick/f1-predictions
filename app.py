@@ -348,8 +348,8 @@ def get_race_info(season, round):
     return jsonify({"error": "No se pudo obtener la información de la carrera"}), 500
 
 #  **Ejecutar la aplicación Flask**
-if __name__ == "__main__":
-    from os import getenv
-    port = int(getenv("PORT", 8080))  # Usa el puerto asignado por Railway
-    app.run(host="0.0.0.0", port=port, debug=True)
+if __name__ == '__main__':
+    port = int(os.environ.get("PORT", 8080))  # Usa el puerto de Railway
+    app.run(host='0.0.0.0', port=port, debug=False)  #  IMPORTANTE: debug=False
+
 
