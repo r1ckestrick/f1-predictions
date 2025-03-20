@@ -86,6 +86,7 @@ def save_predictions():
 class Prediction(db.Model):
     id = db.Column(db.Integer, primary_key=True)  # ID único de la predicción
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)  # Relación con el usuario
+    season = db.Column(db.Integer, nullable=False)  # ← Asegúrate de agregar esta línea
     race = db.Column(db.Integer, nullable=False)  # Número de la carrera
     pole = db.Column(db.String(50))  # Piloto en la pole position
     p1 = db.Column(db.String(50))  # Piloto en el primer lugar
@@ -140,7 +141,7 @@ def submit_prediction():
    # Buscar los drivers del grid
 @app.route('/get_drivers/<year>', methods=['GET'])
 def get_drivers(year):
-    url = f"http://ergast.com/api/f1/{year}/drivers.json"
+    url = f"https://api.jolpi.ca/ergast/f1/{year}/drivers.json"
     response = requests.get(url)
     
     if response.status_code == 200:
@@ -158,7 +159,7 @@ def get_drivers(year):
 #  **Ruta para obtener todas las carreras de una temporada**
 @app.route('/get_all_races/<int:season>', methods=['GET'])
 def get_all_races(season):
-    url = f"https://ergast.com/api/f1/{season}.json"
+    url = f"https://api.jolpi.ca/ergast/f1/{season}.json"
     response = requests.get(url)
     if response.status_code == 200:
         data = response.json()
@@ -186,7 +187,7 @@ def leaderboard():
 
 #  **Función para obtener resultados de una carrera**
 def get_race_results(season, round):
-    url = f"https://ergast.com/api/f1/{season}/{round}/results.json"
+    url = f"https://api.jolpi.ca/ergast/f1/{season}/{round}/results.json"
     response = requests.get(url)
     if response.status_code == 200:
         return response.json()
@@ -281,7 +282,7 @@ def get_predictions(season):
 # ruta correcta para obtener los resultados de la carrera.
 @app.route('/get_race_results/<int:season>/<int:round>', methods=['GET'])
 def get_race_results(season, round):
-    url = f"https://ergast.com/api/f1/{season}/{round}/results.json"
+    url = f"https://api.jolpi.ca/ergast/f1/{season}/{round}/results.json"
     response = requests.get(url)
     if response.status_code == 200:
         return jsonify(response.json())
@@ -290,7 +291,7 @@ def get_race_results(season, round):
 # Obtener la última temporada disponible
 @app.route('/get_latest_season', methods=['GET'])
 def get_latest_season():
-    url = "https://ergast.com/api/f1/seasons.json?limit=100"
+    url = "https://api.jolpi.ca/ergast/f1/seasons.json?limit=100"
     response = requests.get(url)
     
     if response.status_code == 200:
@@ -333,7 +334,7 @@ def get_race_predictions(season, round):
 
 @app.route('/get_race_info/<int:season>/<int:round>', methods=['GET'])
 def get_race_info(season, round):
-    url = f"https://ergast.com/api/f1/{season}/{round}.json"
+    url = f"https://api.jolpi.ca/ergast/f1/{season}/{round}.json"
     response = requests.get(url)
     
     if response.status_code == 200:
