@@ -309,37 +309,37 @@ const formatDate = (dateStr) => {
   }
 
   const handleSavePredictions = () => {
-    fetch(`${API_URL}/save_predictions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
+    const payload = {
         user: currentUser,
-        race: selectedRace,  // ✅ Se envía la carrera
-        season: selectedSeason,  // ✅ Se envía la temporada
+        race: selectedRace,
+        season: selectedSeason,  // <-- Asegurarse de que enviamos la temporada
         predictions: editedPredictions[currentUser],
-      }),
-    })  
+    };
+
+    console.log("📤 Enviando predicción:", payload); // Ver qué se envía antes de hacer la solicitud
+
+    fetch(`${API_URL}/save_predictions`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    })
     .then((res) => res.json())
     .then(() => {
         alert("✅ Predicción guardada!");
-
-        // Recargar predicciones después de guardar
-        fetch(`${API_URL}/get_predictions`)
-        .then((res) => res.json())
-        .then((data) => {
-          const racePredictions = data.predictions.filter(p => p.race === selectedRace);
-          setPredictions(racePredictions);
-        })
-        .catch(() => setPredictions([]));
-      
-
-        setIsEditing(false); // Salir del modo edición
+        setIsEditing(false);
     })
-    .catch(() => alert("❌ Error guardando predicciones"));
+    .catch((err) => console.error("❌ Error guardando predicciones:", err));
+            // Recargar predicciones después de guardar
+            fetch(`${API_URL}/get_predictions`)
+            .then((res) => res.json())
+            .then((data) => {
+              const racePredictions = data.predictions.filter(p => p.race === selectedRace);
+              setPredictions(racePredictions);
+            })
+            .catch(() => setPredictions([]));
 };
-console.log("🏆 Leaderboard recibido:", leaderboard);
-  
-return (
+      
+        return (
   <div className="p-6 bg-gray-900 text-white min-h-screen text-center">
     <div className="bg-gray-800 p-4 rounded shadow-md text-center mb-6">
       <h2 className="text-xl font-bold mb-2">🏎️ Race Week 🏎️</h2>

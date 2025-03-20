@@ -38,6 +38,8 @@ def save_predictions():
     season = data.get("season")
     predictions = data.get("predictions", {})
 
+    print("📩 Recibido en /save_predictions:", data)  # 👀 Ver qué se recibe
+
     # Buscar al usuario en la base de datos
     user = User.query.filter_by(name=user_name).first()
     if not user or not race or not season:
@@ -61,6 +63,7 @@ def save_predictions():
         new_prediction = Prediction(
             user_id=user.id,
             race=race,
+            season=season,
             pole=predictions.get("pole"),
             p1=predictions.get("p1"),
             p2=predictions.get("p2"),
