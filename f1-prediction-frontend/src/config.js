@@ -1,3 +1,3 @@
-const API_URL = "https://f1predictionapp-production.up.railway.app";
+const API_URL = process.env.REACT_APP_API_URL;;
 
 export default API_URL;

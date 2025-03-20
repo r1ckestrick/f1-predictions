@@ -20,6 +20,7 @@ export default function App() {
   const [selectedSeason] = useState("2025"); // Por defecto, la última temporada disponible
   const [availableSeasons, setAvailableSeasons] = useState([]);
   
+  
 
 
   const categories = {
