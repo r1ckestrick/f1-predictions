@@ -16,10 +16,8 @@ export default function App() {
   const [editedPredictions, setEditedPredictions] = useState({}); // Almacena las ediciones
   const [raceInfo, setRaceInfo] = useState(null);
   const [leaderboard, setLeaderboard] = useState([])
-  const [season, setSeason] = useState("2025"); // Default
-  const [selectedSeason] = useState("2025"); // Por defecto, la última temporada disponible
+  const [selectedSeason, setSelectedSeason] = useState("2025"); // Ahora sí cambia
   const [availableSeasons, setAvailableSeasons] = useState([]);
-  
   
 
 
@@ -62,17 +60,66 @@ export default function App() {
 
   const players = ["Renato", "Sebastian", "Enrique"];
 
-  const [drivers, setDrivers] = useState([]);
+  const [drivers, setDrivers] = useState([]); // 🔥 Siempre empieza como array vacío
 
-  const fetchDrivers = useCallback(() => {
+ const fetchDrivers = useCallback(() => {
     fetch(`${API_URL}/get_drivers/${selectedSeason}`)
       .then((res) => res.json())
       .then((data) => {
-        console.log("Pilotos obtenidos:", data);
-        setDrivers(data);
+        console.log("📊 Pilotos obtenidos:", data); // 🔍 Ver qué llega
+        setDrivers(data.drivers || []);  // 💡 Asegurar que siempre sea un array
       })
-      .catch((error) => console.error("Error al obtener pilotos:", error));
-}, [selectedSeason]); // 📌 Dependencia: `selectedSeason` 
+      .catch((error) => {
+        console.error("❌ Error al obtener pilotos:", error);
+        setDrivers([]);  // ⚠️ En caso de error, asignar un array vacío
+      });
+    }, [selectedSeason]);
+  
+useEffect(() => {
+  console.log("🌍 Buscando carreras para la temporada:", selectedSeason);
+  if (!selectedSeason) return; // Evita errores si aún no se ha seleccionado una temporada
+  fetch(`${API_URL}/get_all_races/${selectedSeason}`)
+    .then((res) => res.json())
+    .then((data) => {
+      console.log("🛠️ Verificando carreras:", data); // 🔍 Verifica qué viene realmente
+      if (data.races?.length) { // 👀 Usa `?.` para evitar errores si `races` es undefined
+        console.log("✅ Carreras detectadas:", data.races);
+        setRaces([...data.races]); // 👈 Asegura que React detecte el cambio
+        setSelectedRace(data.races[0].round);
+      } else {
+        console.log("❌ No se encontraron carreras en la API.");
+      }
+    })
+    .catch((error) => console.error("Error al obtener lista de carreras:", error))
+    .finally(() => setLoading(false));
+
+}, [selectedSeason]); // Solo depende de selectedSeason
+
+  useEffect(() => {
+    fetch(`${API_URL}/leaderboard`)
+      .then((res) => res.json())
+      .then((data) => {
+        setLeaderboard(data);
+      })
+      .catch((error) => console.error("Error obteniendo leaderboard:", error));
+  }, [selectedSeason]);
+  
+  useEffect(() => {
+    fetchDrivers(); // 📌 Llamamos a la función que obtiene los pilotos  
+}, [selectedSeason, fetchDrivers]); // ⚠️ Aquí agregamos selectedSeason como dependencia
+
+  useEffect(() => {
+    fetch(`${API_URL}/get_latest_season`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data.latest_season) {
+          const latest = parseInt(data.latest_season);
+          setSelectedSeason(latest);
+          setAvailableSeasons(Array.from({ length: latest - 1949 }, (_, i) => latest - i)); // Genera años desde 1950 hasta la última
+        }
+      })
+      .catch((err) => console.error("Error obteniendo las temporadas:", err));
+  }, [setSelectedSeason]);
   
   useEffect(() => {
     if (!selectedSeason) return; // Evita errores si aún no se ha seleccionado una temporada
@@ -81,50 +128,15 @@ export default function App() {
       .then((data) => {
         if (data.races && data.races.length > 0) {
           console.log("Temporada seleccionada:", selectedSeason);
-          setRaces(data.races);
-          setSelectedRace(data.races[0].round);
-        }
-      })
-      .catch((error) => console.error("Error al obtener lista de carreras:", error))
-      .finally(() => setLoading(false));
-  
-    fetchDrivers(); // 📌 Llamamos a la función que obtiene los pilotos  
-  }, [selectedSeason, fetchDrivers]); // ⚠️ Aquí agregamos selectedSeason como dependencia
-
-  useEffect(() => {
-    fetch(`(${API_URL})/leaderboard`)
-      .then((res) => res.json())
-      .then((data) => {
-        setLeaderboard(data);
-      })
-      .catch((error) => console.error("Error obteniendo leaderboard:", error));
-  }, []);
-  
-  useEffect(() => {
-    fetch(`${API_URL}/get_latest_season`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.latest_season) {
-          const latest = parseInt(data.latest_season);
-          setSeason(latest);
-          setAvailableSeasons(Array.from({ length: latest - 1949 }, (_, i) => latest - i)); // Genera años desde 1950 hasta la última
-        }
-      })
-      .catch((err) => console.error("Error obteniendo las temporadas:", err));
-  }, []);
-  
-  useEffect(() => {
-    fetch(`${API_URL}/get_all_races/${selectedSeason}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.races && data.races.length > 0) {
                   setRaces(data.races);
+                  if (!selectedRace) { // ❗ Solo cambia si no hay una carrera seleccionada
           setSelectedRace(data.races[0].round);
         }
-      })
+      }
+    })
       .catch((error) => console.error("Error al obtener lista de carreras:", error))
       .finally(() => setLoading(false));
-  }, [selectedSeason]); // ✅ Aquí está bien, React debería dejar de quejarse
+  }, [selectedSeason, selectedRace]); // ✅ Aquí está bien, React debería dejar de quejarse
 
 
   useEffect(() => {
@@ -152,15 +164,6 @@ export default function App() {
     setRaceInfo(null);
    });
   
-    
- fetch(`${API_URL}/get_predictions`)
-   .then((res) => res.json())
-   .then((data) => {
-     const racePredictions = data.predictions.filter(p => p.race === selectedRace);
-     setPredictions(racePredictions);
-   })
-   .catch(() => setPredictions([]));
-
  fetch(`${API_URL}/get_race_results/${selectedSeason}/${selectedRace}`)
    .then((res) => res.ok ? res.json() : {})
    .then((data) => {
@@ -196,6 +199,24 @@ export default function App() {
    .catch(() => setRaceResults({}))
    .finally(() => setLoading(false));
 }, [selectedRace, selectedSeason]); // ✅ Aquí está bien, React debería dejar de quejarse
+
+useEffect(() => {
+  if (!selectedSeason || !selectedRace) return;  // Evita errores si aún no se ha seleccionado algo
+
+  fetch(`${API_URL}/get_race_predictions/${selectedSeason}/${selectedRace}`) // 🔥 Llama a la API corregida
+    .then((res) => res.json())
+    .then((data) => {
+      if (data.predictions) {
+        console.log("📊 Predicciones recibidas:", data);
+        setPredictions(data.predictions); // ✅ Guarda solo las predicciones de la carrera seleccionada
+      } else {
+        console.error("❌ Error obteniendo predicciones:", data.error);
+        setPredictions([]);
+      }
+    })
+    .catch(() => setPredictions([]));
+}, [selectedSeason, selectedRace]); // ⚡ Ahora depende del año Y la carrera
+
 
   useEffect(() => {
     let maxHits = 0;
@@ -293,7 +314,8 @@ const formatDate = (dateStr) => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         user: currentUser,
-        race: selectedRace, // ✅ Ahora sí enviamos race_id
+        race: selectedRace,  // ✅ Se envía la carrera
+        season: selectedSeason,  // ✅ Se envía la temporada
         predictions: editedPredictions[currentUser],
       }),
     })  
@@ -340,10 +362,13 @@ return (
 
  {/* Selector de temporada */}
  <label htmlFor="season">Selecciona una temporada:</label>
-      <select id="season" value={season} onChange={(e) => setSeason(e.target.value)}>
-        {availableSeasons.map((year) => (
-          <option key={year} value={year}>{year}</option>
-        ))}
+      <select 
+        id="season" 
+        value={selectedSeason} 
+        onChange={(e) => setSelectedSeason(e.target.value)}>
+          {availableSeasons.map((year) => (
+    <option key={year} value={year}>{year}</option>
+      ))}
       </select>
 
   {leaderboard.length >= 3 ? (
@@ -471,8 +496,7 @@ return (
                 bonusCheck
               ) : currentUser === player ? ( // ✅ Solo permite edición en categorías normales
                 isEditing ? (
-                  <select
-                    value={editedPredictions[player]?.[key] || prediction?.[key] || ""}
+                                    <select
                     onChange={(e) => {
                       setEditedPredictions((prev) => ({
                         ...prev,
@@ -482,11 +506,16 @@ return (
                     className="bg-gray-700 text-white p-1 border rounded"
                   >
                     <option value="">Seleccionar piloto</option>
-                    {drivers.map((driver) => (
-                      <option key={driver.code} value={driver.code}>
-                        {driver.code}
-                      </option>
-                    ))}
+
+                    {Array.isArray(drivers) && drivers.length > 0 ? (
+                      drivers.map((driver) => (
+                        <option key={driver.code} value={driver.code}>
+                          {driver.code}
+                        </option>
+                      ))
+                    ) : (
+                      <option disabled>Cargando pilotos...</option> // ⚠️ Maneja el caso donde no hay pilotos
+                    )}
                   </select>
                 ) : (
                   prediction ? prediction[key] || "-" : "-"
