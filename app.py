@@ -31,39 +31,36 @@ def home():
 
 @app.route("/save_predictions", methods=["POST"])
 def save_predictions():
-    # Recibir datos del frontend
     data = request.json
-    user_name = data.get("user")
-    race = data.get("race")
-    season = data.get("season")
+    user = data.get("user")
+    race = data.get("race")  # Número de ronda
+    season = data.get("season")  # 📌 Asegurarse de recibir la temporada
     predictions = data.get("predictions", {})
 
-    print("📩 Recibido en /save_predictions:", data)  # 👀 Ver qué se recibe
+    print(f"📩 Recibido en /save_predictions: user={user}, race={race}, season={season}, predictions={predictions}")  # 👀 Debug
 
-    # Buscar al usuario en la base de datos
-    user = User.query.filter_by(name=user_name).first()
+    user = User.query.filter_by(name=user).first()
     if not user or not race or not season:
         return jsonify({"error": "Usuario, temporada y carrera son obligatorios"}), 400
 
-    # Verificar si ya existe una predicción para este usuario y carrera
-    existing_prediction = Prediction.query.filter_by(user_id=user.id, race=race).first()
-
-    if existing_prediction:
-        # Si existe, actualizar la predicción
-        existing_prediction.pole = predictions.get("pole")
-        existing_prediction.p1 = predictions.get("p1")
-        existing_prediction.p2 = predictions.get("p2")
-        existing_prediction.p3 = predictions.get("p3")
-        existing_prediction.fastest_lap = predictions.get("fastest_lap")
-        existing_prediction.most_overtakes = predictions.get("most_overtakes")
-        existing_prediction.dnf = predictions.get("dnf")
-        existing_prediction.driver_of_day = predictions.get("driver_of_day")
+    # Guardamos la predicción asociada a la temporada
+    prediction = Prediction.query.filter_by(user_id=user.id, race=race, season=season).first()
+    if prediction:
+        # Si ya existe, actualizarla
+        prediction.pole = predictions.get("pole")
+        prediction.p1 = predictions.get("p1")
+        prediction.p2 = predictions.get("p2")
+        prediction.p3 = predictions.get("p3")
+        prediction.fastest_lap = predictions.get("fastest_lap")
+        prediction.most_overtakes = predictions.get("most_overtakes")
+        prediction.dnf = predictions.get("dnf")
+        prediction.driver_of_day = predictions.get("driver_of_day")
     else:
-        # Si no existe, crear una nueva predicción
-        new_prediction = Prediction(
+        # Si no existe, crear una nueva
+        prediction = Prediction(
             user_id=user.id,
+            season=season,  # 📌 Agregamos la temporada
             race=race,
-            season=season,
             pole=predictions.get("pole"),
             p1=predictions.get("p1"),
             p2=predictions.get("p2"),
@@ -73,11 +70,10 @@ def save_predictions():
             dnf=predictions.get("dnf"),
             driver_of_day=predictions.get("driver_of_day"),
         )
-        db.session.add(new_prediction)  # Agregar la nueva predicción a la sesión
+        db.session.add(prediction)
 
-    # Guardar los cambios en la base de datos
     db.session.commit()
-
+    print(f"✅ Predicción guardada para {user.name}, temporada {season}, carrera {race}")
     return jsonify({"message": "Predicción guardada correctamente"})
 
 

@@ -327,11 +327,12 @@ const formatDate = (dateStr) => {
         fetch(`${API_URL}/get_predictions/${selectedSeason}`)
             .then((res) => res.json())
             .then((data) => {
+              console.log("🔍 Predicciones obtenidas:", data);
                 const racePredictions = data.predictions.filter(p => p.race === selectedRace);
                 setPredictions(racePredictions);
             })
-            .catch(() => setPredictions([]));
-
+            .catch((error) => console.error("🚨 Error obteniendo predicciones:", error));
+            
         setIsEditing(false); // Salir del modo edición
     })
     .catch(() => alert("❌ Error guardando predicciones"));
