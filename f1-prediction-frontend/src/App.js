@@ -309,35 +309,35 @@ const formatDate = (dateStr) => {
   }
 
   const handleSavePredictions = () => {
-    const payload = {
-        user: currentUser,
-        race: selectedRace,
-        season: selectedSeason,  // <-- Asegurarse de que enviamos la temporada
-        predictions: editedPredictions[currentUser],
-    };
-
-    console.log("📤 Enviando predicción:", payload); // Ver qué se envía antes de hacer la solicitud
-
     fetch(`${API_URL}/save_predictions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+            user: currentUser,
+            race: selectedRace,
+            season: selectedSeason,  // 📌 Enviamos la temporada correcta
+            predictions: editedPredictions[currentUser],
+        }),
     })
     .then((res) => res.json())
     .then(() => {
         alert("✅ Predicción guardada!");
-        setIsEditing(false);
-    })
-    .catch((err) => console.error("❌ Error guardando predicciones:", err));
-            // Recargar predicciones después de guardar
-            fetch(`${API_URL}/get_predictions`)
+
+        // 📌 Recargar predicciones después de guardar
+        fetch(`${API_URL}/get_predictions/${selectedSeason}`)
             .then((res) => res.json())
             .then((data) => {
-              const racePredictions = data.predictions.filter(p => p.race === selectedRace);
-              setPredictions(racePredictions);
+                const racePredictions = data.predictions.filter(p => p.race === selectedRace);
+                setPredictions(racePredictions);
             })
             .catch(() => setPredictions([]));
+
+        setIsEditing(false); // Salir del modo edición
+    })
+    .catch(() => alert("❌ Error guardando predicciones"));
 };
+
+
       
         return (
   <div className="p-6 bg-gray-900 text-white min-h-screen text-center">
