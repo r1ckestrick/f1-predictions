@@ -40,6 +40,7 @@ def save_predictions():
 
  # 📌 LOGS para depurar
     print(f"📩 Recibido en /save_predictions: user={user_name}, race={race}, season={season}, predictions={predictions}")
+    print(f"🔎 Predictions: {predictions}")  # 🔎 Verifica exactamente qué se está enviando
 
     # Validaciones
     if not user_name or not race or not season:
@@ -66,37 +67,39 @@ def save_predictions():
             prediction.dnf = predictions.get("dnf", prediction.dnf)
             prediction.best_of_the_rest = predictions.get("best_of_the_rest", prediction.best_of_the_rest)
             prediction.midfield_master = predictions.get("midfield_master", prediction.midfield_master)
-            for key, value in predictions.items():
-                setattr(prediction, key, value.upper() if isinstance(value, str) else value)
+
+            # Normaliza valores en mayúsculas si son strings
+        for key, value in predictions.items():
+            if isinstance(value, str):
+                setattr(prediction, key, value.upper())
+
         else:
             # Crear nueva predicción
             prediction = Prediction(
                 user_id=user.id,
                 race=race,
                 season=season,
-                pole=predictions.get("pole"),
-                p1=predictions.get("p1"),
-                p2=predictions.get("p2"),
-                p3=predictions.get("p3"),
-                positions_gained=predictions.get("positions_gained"),
-                positions_lost=predictions.get("positions_lost"),
-                fastest_lap=predictions.get("fastest_lap"),
-                dnf=predictions.get("dnf"),
-                best_of_the_rest=predictions.get("best_of_the_rest"),
-                midfield_master=predictions.get("midfield_master"),
-                **{k: (v.upper() if isinstance(v, str) else v) for k, v in predictions.items()}
+                pole=predictions.get("pole", "").upper(),
+                p1=predictions.get("p1", "").upper(),
+                p2=predictions.get("p2", "").upper(),
+                p3=predictions.get("p3", "").upper(),
+                positions_gained=predictions.get("positions_gained", "").upper(),
+                positions_lost=predictions.get("positions_lost", "").upper(),
+                fastest_lap=predictions.get("fastest_lap", "").upper(),
+                dnf=predictions.get("dnf", "").upper(),
+                best_of_the_rest=predictions.get("best_of_the_rest", "").upper(),
+                midfield_master=predictions.get("midfield_master", "").upper()
             )
             db.session.add(prediction)
 
         db.session.commit()
         print(f"✅ Predicción guardada correctamente: {prediction}")
         return jsonify({"message": "Predicción guardada correctamente"}), 200
+    
     except Exception as e:
         db.session.rollback()
         print(f"🚨 ERROR al guardar predicción: {str(e)}")
         return jsonify({"error": f"Error al guardar la predicción: {str(e)}"}), 500
-
-
 
     # Modelo de predicciones
 class Prediction(db.Model):
