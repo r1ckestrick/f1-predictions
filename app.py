@@ -29,52 +29,72 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 def home():
     return "Backend funcionando en Railway 🚀"
 
+# ruta para guardar predicciones
 @app.route("/save_predictions", methods=["POST"])
 def save_predictions():
     data = request.json
-    user = data.get("user")
-    race = data.get("race")  # Número de ronda
-    season = data.get("season")  # 📌 Asegurarse de recibir la temporada
+    user_name = data.get("user")
+    race = data.get("race")
+    season = data.get("season")
     predictions = data.get("predictions", {})
 
-    print(f"📩 Recibido en /save_predictions: user={user}, race={race}, season={season}, predictions={predictions}")  # 👀 Debug
+ # 📌 LOGS para depurar
+    print(f"📩 Recibido en /save_predictions: user={user_name}, race={race}, season={season}, predictions={predictions}")
 
-    user = User.query.filter_by(name=user).first()
-    if not user or not race or not season:
-        return jsonify({"error": "Usuario, temporada y carrera son obligatorios"}), 400
+    # Validaciones
+    if not user_name or not race or not season:
+        return jsonify({"error": "Faltan datos obligatorios (usuario, carrera o temporada)"}), 400
 
-    # Guardamos la predicción asociada a la temporada
-    prediction = Prediction.query.filter_by(user_id=user.id, race=race, season=season).first()
-    if prediction:
-        # Si ya existe, actualizarla
-        prediction.pole = predictions.get("pole")
-        prediction.p1 = predictions.get("p1")
-        prediction.p2 = predictions.get("p2")
-        prediction.p3 = predictions.get("p3")
-        prediction.fastest_lap = predictions.get("fastest_lap")
-        prediction.most_overtakes = predictions.get("most_overtakes")
-        prediction.dnf = predictions.get("dnf")
-        prediction.driver_of_day = predictions.get("driver_of_day")
-    else:
-        # Si no existe, crear una nueva
-        prediction = Prediction(
-            user_id=user.id,
-            season=season,  # 📌 Agregamos la temporada
-            race=race,
-            pole=predictions.get("pole"),
-            p1=predictions.get("p1"),
-            p2=predictions.get("p2"),
-            p3=predictions.get("p3"),
-            fastest_lap=predictions.get("fastest_lap"),
-            most_overtakes=predictions.get("most_overtakes"),
-            dnf=predictions.get("dnf"),
-            driver_of_day=predictions.get("driver_of_day"),
-        )
-        db.session.add(prediction)
+    if not predictions:
+        return jsonify({"error": "No se enviaron predicciones"}), 400
 
-    db.session.commit()
-    print(f"✅ Predicción guardada para {user.name}, temporada {season}, carrera {race}")
-    return jsonify({"message": "Predicción guardada correctamente"})
+    user = User.query.filter_by(name=user_name).first()
+    if not user:
+        return jsonify({"error": "Usuario no encontrado"}), 404
+
+    try:
+        prediction = Prediction.query.filter_by(user_id=user.id, race=race, season=season).first()
+        if prediction:
+            # Solo sobrescribe si hay un valor nuevo, sino conserva el anterior
+            prediction.pole = predictions.get("pole", prediction.pole)
+            prediction.p1 = predictions.get("p1", prediction.p1)
+            prediction.p2 = predictions.get("p2", prediction.p2)
+            prediction.p3 = predictions.get("p3", prediction.p3)
+            prediction.positions_gained = predictions.get("positions_gained", prediction.positions_gained)
+            prediction.positions_lost = predictions.get("positions_lost", prediction.positions_lost)
+            prediction.fastest_lap = predictions.get("fastest_lap", prediction.fastest_lap)
+            prediction.dnf = predictions.get("dnf", prediction.dnf)
+            prediction.best_of_the_rest = predictions.get("best_of_the_rest", prediction.best_of_the_rest)
+            prediction.midfield_master = predictions.get("midfield_master", prediction.midfield_master)
+            for key, value in predictions.items():
+                setattr(prediction, key, value.upper() if isinstance(value, str) else value)
+        else:
+            # Crear nueva predicción
+            prediction = Prediction(
+                user_id=user.id,
+                race=race,
+                season=season,
+                pole=predictions.get("pole"),
+                p1=predictions.get("p1"),
+                p2=predictions.get("p2"),
+                p3=predictions.get("p3"),
+                positions_gained=predictions.get("positions_gained"),
+                positions_lost=predictions.get("positions_lost"),
+                fastest_lap=predictions.get("fastest_lap"),
+                dnf=predictions.get("dnf"),
+                best_of_the_rest=predictions.get("best_of_the_rest"),
+                midfield_master=predictions.get("midfield_master"),
+                **{k: (v.upper() if isinstance(v, str) else v) for k, v in predictions.items()}
+            )
+            db.session.add(prediction)
+
+        db.session.commit()
+        print(f"✅ Predicción guardada correctamente: {prediction}")
+        return jsonify({"message": "Predicción guardada correctamente"}), 200
+    except Exception as e:
+        db.session.rollback()
+        print(f"🚨 ERROR al guardar predicción: {str(e)}")
+        return jsonify({"error": f"Error al guardar la predicción: {str(e)}"}), 500
 
 
 
@@ -88,10 +108,12 @@ class Prediction(db.Model):
     p1 = db.Column(db.String(50))  # Piloto en el primer lugar
     p2 = db.Column(db.String(50))  # Piloto en el segundo lugar
     p3 = db.Column(db.String(50))  # Piloto en el tercer lugar
+    positions_gained = db.Column(db.String(50))  # Piloto que subio mas en la grilla
+    positions_lost = db.Column(db.String(50))  # Piloto que bajo mas en la grilla
     fastest_lap = db.Column(db.String(50))  # Piloto con la vuelta más rápida
-    most_overtakes = db.Column(db.String(50))  # Piloto con más adelantamientos
     dnf = db.Column(db.String(50))  # Piloto que no terminó la carrera
-    driver_of_day = db.Column(db.String(50))  # Piloto del día
+    best_of_the_rest = db.Column(db.String(50)) # piloto en 4-6 lugar
+    midfield_master =db.Column(db.String(50)) # piloto en 7-10 lufar
     points = db.Column(db.Integer, default=0)  # Puntos obtenidos por la predicción
 
 # Crear la base de datos si no existe
@@ -103,36 +125,6 @@ with app.app_context():
         db.session.add(User(name="Sebastian"))
         db.session.add(User(name="Enrique"))
         db.session.commit()
-
-#  **Ruta para guardar predicciones**
-@app.route('/submit_prediction', methods=['POST'])
-def submit_prediction():
-    data = request.json  # Recibir datos del frontend
-
-    # Buscar el usuario en la base de datos
-    user = User.query.filter_by(name=data["user"]).first()
-    if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 404
-
-    # Crear una nueva predicción
-    prediction = Prediction(
-        user_id=user.id,
-        race=data["race"],
-        pole=data["pole"],
-        p1=data["p1"],
-        p2=data["p2"],
-        p3=data["p3"],
-        fastest_lap=data["fastest_lap"],
-        most_overtakes=data["most_overtakes"],
-        dnf=data["dnf"],
-        driver_of_day=data["driver_of_day"]
-    )
-
-    # Guardar en la base de datos
-    db.session.add(prediction)
-    db.session.commit()
-
-    return jsonify({"message": "Predicción guardada con éxito!"}), 201
    
    # Buscar los drivers del grid
 @app.route('/get_drivers/<year>', methods=['GET'])
@@ -176,7 +168,7 @@ def leaderboard():
     ranking = []
     for user in users:
         total_points = db.session.query(db.func.sum(Prediction.points)).filter(Prediction.user_id == user.id).scalar()
-        ranking.append({"name": user.name, "total_points": total_points or 0})
+        ranking.append({"name": user.name, "total_points": total_points or 0})  # Evita valores nulos
     
     ranking = sorted(ranking, key=lambda x: x["total_points"], reverse=True)
     return jsonify(ranking)
@@ -188,37 +180,6 @@ def get_race_results(season, round):
     if response.status_code == 200:
         return response.json()
     return None
-
-#función que calcule y guarde los puntos después de cada carrera.
-def calculate_points(prediction, race_results):
-    """Calcula los puntos de una predicción en base a los resultados reales"""
-    points = 0
-
-    # Comparar cada predicción con los resultados reales
-    if prediction.pole == race_results.get("pole"):
-        points += 10
-    if prediction.p1 == race_results.get("p1"):
-        points += 10
-    if prediction.p2 == race_results.get("p2"):
-        points += 10
-    if prediction.p3 == race_results.get("p3"):
-        points += 10
-    if prediction.fastest_lap == race_results.get("fastest_lap"):
-        points += 10
-    if prediction.most_overtakes == race_results.get("most_overtakes"):
-        points += 10
-    if prediction.dnf == race_results.get("dnf"):
-        points += 10
-    if prediction.driver_of_day == race_results.get("driver_of_day"):
-        points += 10
-
-    # Bonos
-    podium = {race_results.get("p1"), race_results.get("p2"), race_results.get("p3")}
-    predicted_podium = {prediction.p1, prediction.p2, prediction.p3}
-    if podium == predicted_podium:
-        points *= 2  # Bono por acertar el podio exacto
-
-    prediction.points = points
 
 #  **Función para extraer datos clave de una carrera**
 def extract_race_summary(results):
@@ -233,22 +194,60 @@ def extract_race_summary(results):
         "most_overtakes": None
     }
 
-    # Buscar la vuelta más rápida
-    for driver in race_data.get('Results', []):
-        if 'FastestLap' in driver:
-            summary["fastest_lap"] = driver['Driver']['code']
-            break
+# modelo de calculo de puntaje
+def calculate_points(prediction, race_results):
+    """Calcula los puntos de una predicción en base a los resultados reales con la nueva lógica"""
+    base_points = 40
+    bonus_points = 50
 
-    # Calcular el piloto con más adelantamientos
-    overtakes = {}
-    for driver in race_data.get('Results', []):
-        start_pos = int(driver.get('grid', 0))
-        finish_pos = int(driver.get('position', 0))
-        name = driver.get('Driver', {}).get('code', "N/A")
-        overtakes[name] = start_pos - finish_pos
-    summary["most_overtakes"] = max(overtakes, key=overtakes.get, default="N/A")
+    # Calcular aciertos básicos
+    correct_picks = sum([
+        prediction.pole == race_results.get("pole"),
+        prediction.p1 == race_results.get("p1"),
+        prediction.p2 == race_results.get("p2"),
+        prediction.p3 == race_results.get("p3"),
+        prediction.fastest_lap == race_results.get("fastest_lap"),
+        prediction.dnf == race_results.get("dnf"),
+        prediction.best_of_the_rest == race_results.get("best_of_the_rest"),
+        prediction.midfield_master == race_results.get("midfield_master"),
+    ])
+
+    # Bonos
+    podium_correct = {race_results.get("p1"), race_results.get("p2"), race_results.get("p3")}
+    user_podium = {prediction.p1, prediction.p2, prediction.p3}
+    udimpo = user_podium == podium_correct  # ✅ Acertó los 3 en desorden
+    podium = user_podium == set([race_results.get("p1"), race_results.get("p2"), race_results.get("p3")])  # ✅ Acertó el orden exacto
+    hat_trick = all([
+        prediction.pole == race_results.get("pole"),
+        prediction.p1 == race_results.get("p1"),
+        prediction.fastest_lap == race_results.get("fastest_lap")
+    ])
+    bullseye = all([
+        prediction.best_of_the_rest == race_results.get("best_of_the_rest"),
+        prediction.midfield_master == race_results.get("midfield_master")
+    ])
     
-    return summary
+    # Contar bonos obtenidos
+    active_bonuses = sum([udimpo, podium, hat_trick, bullseye])
+    
+    # Aplicar puntuación
+    points = (correct_picks * base_points) + (active_bonuses * bonus_points)
+
+    # Aplicar multiplicadores
+    if active_bonuses == 2:
+        points *= 1.1
+    elif active_bonuses == 3:
+        points *= 1.2
+    elif active_bonuses == 4:
+        points *= 1.3
+
+    # Si obtiene OMEN (10 aciertos y todos los bonos), suma +200 puntos
+    if correct_picks == 10 and active_bonuses == 4:
+        points += 200
+
+    prediction.points = int(points)
+    return prediction.points  # Retorna el puntaje actualizado
+
 
 # Ruta para Obtener Predicciones Guardadas
 @app.route('/get_predictions/<int:season>', methods=['GET'])
@@ -260,16 +259,18 @@ def get_predictions(season):
         user = User.query.get(prediction.user_id)
         results.append({
             "user": user.name,
-            "season": season,  # 🔥 Asegúrate de devolver la temporada
+            "season": season,
             "race": prediction.race,
             "pole": prediction.pole,
             "p1": prediction.p1,
             "p2": prediction.p2,
             "p3": prediction.p3,
+            "positions_gained": prediction.positions_gained,
+            "positions_lost": prediction.positions_lost,
             "fastest_lap": prediction.fastest_lap,
-            "most_overtakes": prediction.most_overtakes,
             "dnf": prediction.dnf,
-            "driver_of_day": prediction.driver_of_day,
+            "best_of_the_rest": prediction.best_of_the_rest,
+            "midfield_master": prediction.midfield_master,
             "points": prediction.points
         })
     
@@ -310,16 +311,19 @@ def get_race_predictions(season, round):
     predictions_list = [
         {
             "user": User.query.get(pred.user_id).name,
-            "race": pred.race,
             "season": pred.season,
+            "race": pred.race,
             "pole": pred.pole,
             "p1": pred.p1,
             "p2": pred.p2,
             "p3": pred.p3,
+            "positions_gained": pred.positions_gained,
+            "positions_lost": pred.positions_lost,
             "fastest_lap": pred.fastest_lap,
-            "most_overtakes": pred.most_overtakes,
-            "dnf": pred.dnf,
-            "driver_of_day": pred.driver_of_day,
+            "dnf" : pred.dnf, 
+            "best_of_the_rest" : pred.best_of_the_rest, 
+            "midfield_master" : pred.midfield_master,
+            "fastest_lap": pred.fastest_lap,
             "points": pred.points
         }
         for pred in predictions

@@ -1,6 +1,28 @@
-import "./App.css";  // Asegura que los estilos se carguen correctamente
 import { useState, useEffect, useCallback } from "react"
 import API_URL from "./config.js"
+import * as React from "react";
+import { 
+    Container, 
+    FormControl, 
+    Box, 
+    MenuItem, 
+    Typography, 
+    TextField, 
+    InputLabel, 
+    Button,
+    Paper,
+    Select,
+    Table, 
+    TableBody, 
+    TableCell, 
+    TableContainer,
+    TableHead,
+    TableRow, 
+        }  
+from "@mui/material";
+
+
+
 
 export default function App() {
   const [selectedRace, setSelectedRace] = useState("");
@@ -17,8 +39,9 @@ export default function App() {
   const [raceInfo, setRaceInfo] = useState(null);
   const [leaderboard, setLeaderboard] = useState([])
   const [selectedSeason, setSelectedSeason] = useState("2025"); // Ahora sí cambia
+  const [season, setSeason] = useState("2025"); // Ahora sí cambia
   const [availableSeasons, setAvailableSeasons] = useState([]);
-  
+
 
 
   const categories = {
@@ -26,37 +49,58 @@ export default function App() {
     p1: "P1",
     p2: "P2",
     p3: "P3",
+    positions_gained: "POG",
+    positions_lost: "POL",
     fastest_lap: "FL",
-    most_overtakes: "MO",
     dnf: "DNF",
-    driver_of_day: "DOTD",
+    best_of_the_rest: "BOR",
+    midfield_master: "MFM", 
+    bullseye: "BULLSEYE",
+    hatTrick: "HATTRICK",
     udimpo: "UDIMPO",
     podium: "PODIUM",
-    casimen: "CASIMEN",
     omen: "OMEN"
   };
 
   const calculatePoints = (player) => {
     if (!player || !raceResults) return 0;
-  
-    let points = 0;
-    const bonuses = checkBonuses(player);
-  
-    // Sumar 10 puntos por cada acierto
+
+    let basePoints = 0;
+    let bonusCount = 0;
+    
+    // ✅ Verificar aciertos
     Object.keys(raceResults).forEach((key) => {
-      if (raceResults[key] === player[key]) {
-        points += 10;
-      }
+        if (raceResults[key] === player[key]) {
+            basePoints += 40; // Cada acierto vale 40 puntos
+        }
     });
-  
-    // Aplicar los bonos activos
-    if (bonuses.udimpo) points *= 2;
-    if (bonuses.podium) points *= 2;
-    if (bonuses.casimen) points *= 2;
-    if (bonuses.omen) points *= 2;
-  
-    return points;
-  };
+
+    // ✅ Verificar bonos activados
+    const bonuses = checkBonuses(player);
+    if (bonuses.bullseye) bonusCount++;
+    if (bonuses.hatTrick) bonusCount++;
+    if (bonuses.udimpo) bonusCount++;
+    if (bonuses.podium) bonusCount++;
+
+    // Cada bono activo suma 50 puntos
+    let bonusPoints = bonusCount * 50;
+
+    // ✅ Aplicar multiplicadores según la cantidad de bonos activados
+    let multiplier = 1;
+    if (bonusCount === 2) multiplier = 1.1;
+    if (bonusCount === 3) multiplier = 1.2;
+    if (bonusCount === 4) multiplier = 1.3; // Máximo de 4 bonos
+
+    // ✅ Aplicar el multiplicador
+    let totalPoints = (basePoints + bonusPoints) * multiplier;
+
+    // ✅ Si obtiene OMEN (todos los aciertos + todos los bonos), sumar 200 puntos extra
+    if (bonusCount === 4 && basePoints === 400) {
+        totalPoints += 200;
+    }
+
+    return Math.round(totalPoints); // Redondeamos para evitar decimales
+};
 
   const players = ["Renato", "Sebastian", "Enrique"];
 
@@ -115,7 +159,7 @@ useEffect(() => {
         if (data.latest_season) {
           const latest = parseInt(data.latest_season);
           setSelectedSeason(latest);
-          setAvailableSeasons(Array.from({ length: latest - 1949 }, (_, i) => latest - i)); // Genera años desde 1950 hasta la última
+          setAvailableSeasons(Array.from({ length: latest - 2010 }, (_, i) => latest - i)); // Genera años desde 2010 hasta la última
         }
       })
       .catch((err) => console.error("Error obteniendo las temporadas:", err));
@@ -185,10 +229,13 @@ useEffect(() => {
          p1: raceData.Results?.[0]?.Driver?.code || "-",
          p2: raceData.Results?.[1]?.Driver?.code || "-",
          p3: raceData.Results?.[2]?.Driver?.code || "-",
+         positions_gained: "-",
+         positions_lost: "-",
          fastest_lap: raceData.Results?.find((r) => r.FastestLap)?.Driver?.code || "-",
-         most_overtakes: "-",
          dnf: raceData.Results?.find((r) => r.status !== "Finished")?.Driver?.code || "-",
-         driver_of_day: "-"
+         best_of_the_rest: "-",
+         midfield_master: "-",
+
        };
 
        setRaceResults(processedResults);
@@ -238,20 +285,24 @@ useEffect(() => {
   }, [predictions, raceResults]);
 
   const checkBonuses = (player) => {
-    if (!player || !raceResults) return { udimpo: false, podium: false, casimen: false, omen: false };
-  
+    if (!player || !raceResults) return {};
+
     const correctPicks = Object.keys(raceResults).filter((key) => raceResults[key] === player[key]).length;
     const correctPodium = ["p1", "p2", "p3"].every(pos => player[pos] && Object.values(raceResults).includes(player[pos]));
     const correctPodiumOrder = ["p1", "p2", "p3"].every(pos => raceResults[pos] === player[pos]);
-  
+    const correctHatTrick = ["pole", "p1", "fastest_lap"].every(pos => raceResults[pos] === player[pos]);
+    const correctBullseye = ["p4", "p5", "p6", "p7", "p8", "p9", "p10"].some(pos => raceResults[pos] === player[pos]);
+
     return {
-      udimpo: correctPodium,     // Acertar al podio sin importar el orden
-      podium: correctPodiumOrder, // Acertar al podio en el orden correcto
-      casimen: correctPicks > 4,  // Acertar más de la mitad de las categorías (5 o más)
-      omen: correctPicks === 8,   // Acertar todas las categorías
+        udimpo: correctPodium, // ✅ Acierta los 3 del podio en desorden
+        bullseye: correctBullseye, // ✅ Acierta BOR + MFM (al menos uno en cada categoría)
+        podium: correctPodiumOrder, // ✅ Acierta los 3 del podio en orden exacto
+        hatTrick: correctHatTrick, // ✅ Acierta Pole + P1 + Fastest Lap
+        omen: correctPicks === Object.keys(raceResults).length, // ✅ Acierta TODO en la carrera
     };
-  };
-  
+};
+
+
   const handleLogin = (e) => {
     e.preventDefault();
     const username = e.target.username.value;
@@ -278,35 +329,36 @@ const formatDate = (dateStr) => {
   return new Date(dateStr).toLocaleDateString("es-ES", options);
 };
 
-  if (!isLoggedIn) {
-    return (
-      
-      <div className="p-6 bg-gray-900 text-white min-h-screen text-center">
-        <div className="bg-gray-800 p-4 rounded shadow-md text-center mb-6">
-          <h2 className="text-xl font-bold mb-2">🔒 Iniciar Sesión</h2>
-          <form onSubmit={handleLogin}>
-            <input
-              type="text"
-              name="username"
-              placeholder="Usuario"
-              required
-              className="p-2 m-2 border rounded bg-gray-700 text-white"
-            />
-            <input
-              type="password"
-              name="password"
-              placeholder="Contraseña"
-              required
-              className="p-2 m-2 border rounded bg-gray-700 text-white"
-            />
-            <button type="submit" className="p-2 bg-blue-500 rounded text-white">
-              Entrar
-            </button>
-          </form>
-        </div>
-      </div>
-    );
-  }
+// Ventana Login
+if (!isLoggedIn) {
+  return (
+    <Container maxWidth="sm">
+      <Paper elevation={4} sx={{ p: 4, mt: 10 }}>
+        <Typography variant="h5" align="center" gutterBottom>
+          🔒 Iniciar Sesión
+        </Typography>
+        <Box component="form" onSubmit={handleLogin} sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+          <TextField
+            name="username"
+            label="Usuario"
+            variant="outlined"
+            required
+          />
+          <TextField
+            name="password"
+            type="password"
+            label="Contraseña"
+            variant="outlined"
+            required
+          />
+          <Button type="submit" variant="contained" color="primary">
+            Entrar
+          </Button>
+        </Box>
+      </Paper>
+    </Container>
+  );
+}
 
   const handleSavePredictions = () => {
     fetch(`${API_URL}/save_predictions`, {
@@ -341,36 +393,46 @@ const formatDate = (dateStr) => {
 
       
         return (
-  <div className="p-6 bg-gray-900 text-white min-h-screen text-center">
+            <div className="p-6 bg-gray-900 text-white min-h-screen text-center">
+              <Paper elevation={4} sx={{ p: 4, mb: 4, textAlign: "center" }}>
+            <Typography variant="h5" gutterBottom>
+            🏆 Prediction Party F1 2024 🏆
+            </Typography>
+
+            {/* Selector de Temporada */}
+            <FormControl sx={{ m: 1, minWidth: 120 }}>
+              <InputLabel>Temporada</InputLabel>
+              <Select
+                value={season}
+                onChange={(e) => setSeason(e.target.value)}
+                label="Temporada"
+              >
+                {availableSeasons.map((year) => (
+                  <MenuItem key={year} value={year}>{year}</MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+
+            {/* Selector de Carrera */}
+            <FormControl sx={{ m: 1, minWidth: 200 }}>
+              <InputLabel>Carrera</InputLabel>
+              <Select
+                value={selectedRace}
+                onChange={(e) => setSelectedRace(e.target.value)}
+                label="Carrera"
+              >
+                {races.map((race) => (
+                  <MenuItem key={race.round} value={race.round}>
+                    {race.raceName} - {race.round}
+                  </MenuItem>
+                ))}
+              </Select>
+            </FormControl>
+          </Paper>
+
+    {/* Leaderboard - Podio */}
     <div className="bg-gray-800 p-4 rounded shadow-md text-center mb-6">
-      <h2 className="text-xl font-bold mb-2">🏎️ Race Week 🏎️</h2>
-      <select
-        value={selectedRace}
-        onChange={(e) => setSelectedRace(e.target.value)}
-        className="p-2 border rounded bg-gray-700 text-white"
-      >
-        {races.map((race) => (
-          <option key={race.round} value={race.round}>
-            {race.raceName} - {race.round}
-          </option>
-        ))}
-      </select>
-    </div>
-
-{/* Leaderboard - Podio */}
-<div className="bg-gray-800 p-4 rounded shadow-md text-center mb-6">
-  <h2 className="text-xl font-bold mb-2">🏆 Prediction Party F1 2024 🏆</h2>
-
- {/* Selector de temporada */}
- <label htmlFor="season">Selecciona una temporada:</label>
-      <select 
-        id="season" 
-        value={selectedSeason} 
-        onChange={(e) => setSelectedSeason(e.target.value)}>
-          {availableSeasons.map((year) => (
-    <option key={year} value={year}>{year}</option>
-      ))}
-      </select>
+      <h2 className="text-xl font-bold mb-2">🏆 Prediction Party F1 2024 🏆</h2>
 
   {leaderboard.length >= 3 ? (
     <div className="flex justify-center items-end space-x-6">
@@ -439,133 +501,147 @@ const formatDate = (dateStr) => {
     {loading && <p className="text-center text-gray-400">Cargando datos...</p>}
 
     {/* Botón de edición */}
-    <button
+    <Button
       onClick={() => setIsEditing(!isEditing)}
       className={`p-2 rounded text-white mt-4 ${isEditing ? "bg-red-500" : "bg-blue-500"}`}
     >
       {isEditing ? "Cancelar Edición" : "Editar Predicción"}
-    </button>
+    </Button>
 
     {/* 📌 Tabla de predicciones */}
     <div className="bg-gray-800 p-4 rounded shadow-md text-center mb-6">
-      <table className="w-full border-collapse border border-gray-600">
-        <thead>
-          <tr className="bg-gray-700">
-            <th className="border border-gray-600 p-2">Categoría</th>
-            {players.map((player) => (
-              <th key={player} className="border border-gray-600 p-2">{player}</th>
-            ))}
-            <th className="border border-gray-600 p-2">Resultados Reales</th>
-          </tr>
-        </thead>
-          
-          <tbody>
-  {Object.keys(categories).map((key, index) => (
-    <>
-      {/* 📌 Separador antes de los bonos */}
-      {key === "udimpo" && (
-        <tr className="bg-gray-900">
-          <td colSpan={players.length + 2} className="border-t-4 border-gray-500 p-2 font-bold text-white">
-            
-          </td>
-        </tr>
-      )}
+    <TableContainer component={Paper} sx={{ bgcolor: "#1f2937", mt: 4 }}>
+  <Table>
+    <TableHead>
+      <TableRow>
+        <TableCell sx={{ color: "white", fontWeight: "bold" }}>Categoría</TableCell>
+        {players.map((player) => (
+          <TableCell key={player} sx={{ color: "white", fontWeight: "bold" }}>{player}</TableCell>
+        ))}
+        <TableCell sx={{ color: "white", fontWeight: "bold" }}>Resultados</TableCell>
+      </TableRow>
+    </TableHead>
+    <TableBody>
+      {Object.keys(categories).map((key) => (
+        <React.Fragment key={key}>
+          {/* Separador antes de los bonos */}
+          {key === "bullseye" && (
+            <TableRow>
+              <TableCell colSpan={players.length + 2} sx={{ borderBottom: "3px solid #9ca3af" }} />
+            </TableRow>
+          )}
 
-      <tr key={key} className="bg-gray-800">
-        <td className="border border-gray-600 p-2 font-bold">{categories[key]}</td>
-        {players.map((player) => {
-          const prediction = predictions.find(p => p.user === player);
-          const isBonusCategory = ["udimpo", "podium", "casimen", "omen"].includes(key);
-          const bonusCheck = checkBonuses(prediction)[key] ? "✔️" : "❌";
+          <TableRow>
+            <TableCell 
+            sx={{ color: "white", fontWeight: "bold" }}>{categories[key]}
 
+            </TableCell>
+            {players.map((player) => {
+              const prediction = predictions.find(p => p.user === player);
+              const isBonusCategory = ["udimpo", "podium", "hatTrick", "bullseye", "omen"].includes(key);
+              const bonusCheck = checkBonuses(prediction)[key] ? "✔️" : "❌";
+              const value = prediction ? prediction[key] || "-" : "-";
+
+              const cellColor = isBonusCategory
+                ? checkBonuses(prediction)[key]
+                  ? "#22c55e" // verde
+                  : "#374151" // gris
+                : raceResults[key] && prediction?.[key] === raceResults[key]
+                  ? "#22c55e"
+                  : prediction?.[key]
+                    ? "#ef4444"
+                    : "#374151";
+
+              return (
+                <TableCell
+                  key={player}
+                  sx={{ bgcolor: cellColor, color: "white", fontWeight: "bold" }}
+                >
+                  {isBonusCategory
+                    ? bonusCheck
+                    : currentUser === player && isEditing ? (
+                      <select
+                        value={editedPredictions[player]?.[key] || prediction?.[key] || ""}
+                        onChange={(e) => {
+                          setEditedPredictions((prev) => ({
+                            ...prev,
+                            [player]: { ...prev[player], [key]: e.target.value },
+                          }));
+                        }}
+                        style={{
+                          backgroundColor: "#374151",
+                          color: "white",
+                          padding: "0.3rem",
+                          borderRadius: "4px"
+                        }}
+                      >
+                        <option value="">Seleccionar piloto</option>
+                        {drivers.map((driver) => (
+                          <option key={driver.code} value={driver.code}>
+                            {driver.code}
+                          </option>
+                        ))}
+                      </select>
+                    ) : (
+                      value
+                    )}
+                </TableCell>
+              );
+            })}
+
+            {/* Resultado */}
+
+            <TableCell sx={{ bgcolor: "#4b5563", fontWeight: "bold", color: "white" }}>
+              {key === "bullseye" ? "Total Aciertos:"
+                : key === "hatTrick" ? totalHits
+                : key === "podium" ? "Ganador Ronda:"
+                : raceResults[key] || "-"}
+
+                
+            </TableCell>
+          </TableRow>
+        </React.Fragment>
+      ))}
+
+      {/* Puntaje final */}
+      <TableRow>
+        <TableCell sx={{ color: "white", fontWeight: "bold" }}>PUNTAJE</TableCell>
+              {players.map((player) => {
+              const prediction = predictions.find(p => p.user === player);
           return (
             
-            <td key={player} 
-              className={`border border-gray-600 p-2 
-                ${isBonusCategory 
-                  ? checkBonuses(prediction)[key] 
-                    ? "bg-green-500 text-white"  // ✅ Bono activado
-                    : "bg-gray-700 text-white"   // 🔹 Bono desactivado (gris)
-                  : raceResults[key] && prediction?.[key] === raceResults[key] 
-                    ? "bg-green-500 text-white font-bold" // ✅ Acierto → Verde
-                    : prediction?.[key] 
-                      ? "bg-red-500 text-white" // ❌ Fallo → Rojo
-                      : "bg-gray-700 text-white" // 🔹 Sin predicción → Gris
-                }`}
-            >
-              {isBonusCategory ? ( // 🔥 No permite edición, solo muestra el estado del bonus
-                bonusCheck
-              ) : currentUser === player ? ( // ✅ Solo permite edición en categorías normales
-                isEditing ? (
-                                    <select
-                    onChange={(e) => {
-                      setEditedPredictions((prev) => ({
-                        ...prev,
-                        [player]: { ...prev[player], [key]: e.target.value },
-                      }));
-                    }}
-                    className="bg-gray-700 text-white p-1 border rounded"
-                  >
-                    <option value="">Seleccionar piloto</option>
-
-                    {Array.isArray(drivers) && drivers.length > 0 ? (
-                      drivers.map((driver) => (
-                        <option key={driver.code} value={driver.code}>
-                          {driver.code}
-                        </option>
-                      ))
-                    ) : (
-                      <option disabled>Cargando pilotos...</option> // ⚠️ Maneja el caso donde no hay pilotos
-                    )}
-                  </select>
-                ) : (
-                  prediction ? prediction[key] || "-" : "-"
-                )
-              ) : (
-                prediction ? prediction[key] || "-" : "-"
-              )}
-            </td>
+            <TableCell 
+              key={player} sx={{ bgcolor: "#4b5563", color: "white", fontWeight: "bold" }} >
+              {calculatePoints(prediction)} 
+            </TableCell>
+            
           );
         })}
         
-        {/* Ajuste para fusionar la celda de ganador en las filas OMEN y PUNTAJE */}
-        {key === "omen" ? (
-          <td className="border border-gray-600 p-2 font-bold bg-gray-700" rowSpan="2">
-            {winner || "Nadie aún"}
-          </td>
-        ) : key === "puntaje" ? null : (
-          <td className="border border-gray-600 p-2 font-bold bg-gray-700">
-            {key === "udimpo" ? "Total Aciertos:" :
-             key === "podium" ? totalHits :
-             key === "casimen" ? "Ganador de la Ronda:" :
-             raceResults[key] || "-"}
-          </td>
-        )}
-      </tr>
-    </>
-  ))}
+        
+  <TableCell colSpan={players.length + 1} sx={{ bgcolor: "#FFD700", color: "black", fontWeight: "bold", textAlign: "center" }}>
+    🏆 {winner || "Aún no definido"}
+  </TableCell>
 
-  {/* Fila única para el puntaje */}
-  <tr className="bg-gray-800">
-    <td className="border border-gray-600 p-2 font-bold">PUNTAJE</td>
-    {players.map((player) => {
-      const prediction = predictions.find(p => p.user === player);
-      return (
-        <td key={player} className="border border-gray-600 p-2 font-bold bg-gray-700">
-          {calculatePoints(prediction)}
-        </td>
-      );
-    })}
-  </tr>
-</tbody>
-        </table>
+        
+        <TableCell />
+      </TableRow>
+        
+    </TableBody>
+  </Table>
+  
+</TableContainer>
+        
         {isEditing && (
-  <button
-    onClick={handleSavePredictions}
-    className="mt-4 p-2 bg-green-500 rounded text-white"
-  >
-    Guardar Predicciones
-  </button>
+  <Box mt={2}>
+    <Button
+      onClick={handleSavePredictions}
+      variant="contained"
+      color="success"
+    >
+      Guardar Predicciones
+    </Button>
+  </Box>
 )}
       </div>
     </div>
