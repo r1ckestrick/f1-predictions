@@ -67,11 +67,13 @@ def save_predictions():
             prediction.dnf = predictions.get("dnf", prediction.dnf)
             prediction.best_of_the_rest = predictions.get("best_of_the_rest", prediction.best_of_the_rest)
             prediction.midfield_master = predictions.get("midfield_master", prediction.midfield_master)
+            prediction.pog = predictions.get("pog", prediction.pog)
+            prediction.pol = predictions.get("pol", prediction.pol)
 
-            # Normaliza valores en mayúsculas si son strings
+         # Aplicar transformación a mayúsculas si es string
         for key, value in predictions.items():
-            if isinstance(value, str):
-                setattr(prediction, key, value.upper())
+            if hasattr(prediction, key):  # Solo asigna valores a atributos válidos
+                setattr(prediction, key, value.upper() if isinstance(value, str) else value)
 
         else:
             # Crear nueva predicción
@@ -79,16 +81,18 @@ def save_predictions():
                 user_id=user.id,
                 race=race,
                 season=season,
-                pole=predictions.get("pole", "").upper(),
-                p1=predictions.get("p1", "").upper(),
-                p2=predictions.get("p2", "").upper(),
-                p3=predictions.get("p3", "").upper(),
-                positions_gained=predictions.get("positions_gained", "").upper(),
-                positions_lost=predictions.get("positions_lost", "").upper(),
-                fastest_lap=predictions.get("fastest_lap", "").upper(),
-                dnf=predictions.get("dnf", "").upper(),
-                best_of_the_rest=predictions.get("best_of_the_rest", "").upper(),
-                midfield_master=predictions.get("midfield_master", "").upper()
+                pole=predictions.get("pole"),
+                p1=predictions.get("p1"),
+                p2=predictions.get("p2"),
+                p3=predictions.get("p3"),
+                positions_gained=predictions.get("positions_gained"),
+                positions_lost=predictions.get("positions_lost"),
+                fastest_lap=predictions.get("fastest_lap"),
+                dnf=predictions.get("dnf"),
+                best_of_the_rest=predictions.get("best_of_the_rest"),
+                midfield_master=predictions.get("midfield_master"),
+                pog=predictions.get("pog"),
+                pol=predictions.get("pol")
             )
             db.session.add(prediction)
 
