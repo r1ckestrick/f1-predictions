@@ -520,7 +520,7 @@ def get_race_info(season, round):
 
 #  **Ejecutar la aplicación Flask**
 if __name__ == '__main__':
-    port = int(os.environ.get("PORT", 3000))  # Usa el puerto de Railway
+    port = int(os.environ.get("PORT", 8080))  # usa 8080 por defecto
     app.run(host='0.0.0.0', port=port, debug=False)  #  IMPORTANTE: debug=False
 
 
