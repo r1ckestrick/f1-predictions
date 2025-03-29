@@ -28,24 +28,6 @@ db = SQLAlchemy(app)
 from flask_migrate import Migrate
 migrate = Migrate(app, db)
 
-
-# Modelo de usuario
-class User(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    name = db.Column(db.String(50), unique=True, nullable=False)
-    predictions = db.relationship('Prediction', backref='user', lazy=True)  # Relación con Prediction
-
-# Pre-carga de usuarios si no existen
-with app.app_context():
-    if not User.query.first():
-        db.session.add(User(name="Renato"))
-        db.session.add(User(name="Sebastian"))
-        db.session.add(User(name="Enrique"))
-        db.session.commit()
-        force_print("✅ Usuarios base creados")
-
-
-
 #-------------------------SISTEMA DE RESULTADOS-------------------------#
 
 @app.route('/get_race_results/<int:season>/<int:round>', methods=['GET'])
@@ -515,6 +497,21 @@ def get_race_info(season, round):
             return jsonify(race_info)
 
     return jsonify({"error": "No se pudo obtener la información de la carrera"}), 500
+
+# Modelo de usuario
+class User(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(50), unique=True, nullable=False)
+    predictions = db.relationship('Prediction', backref='user', lazy=True)  # Relación con Prediction
+
+# Pre-carga de usuarios si no existen
+with app.app_context():
+    if not User.query.first():
+        db.session.add(User(name="Renato"))
+        db.session.add(User(name="Sebastian"))
+        db.session.add(User(name="Enrique"))
+        db.session.commit()
+        force_print("✅ Usuarios base creados")
 
 #-------------------------FIN MODELOS DE BASE DE DATOS-------------------------#
 
