@@ -462,27 +462,36 @@ def get_predictions(season):
 def get_race_predictions(season, round):
     predictions = Prediction.query.filter_by(season=season, race=round).all()
 
-    # Obtener resultados reales solo si hay predicciones
     if not predictions:
         print(f"🔔 No hay predicciones para {season}-{round}")
         return jsonify({"predictions": []}), 200
 
-    response = requests.get(f"{API_URL}/get_race_results/{season}/{round}")
-    if response.status_code != 200:
-        print(f"⚠️ Carrera {season}-{round} sin resultados (API status {response.status_code})")
-        return jsonify({"predictions": []}), 200
-
-    race_results = response.json()
-    if "error" in race_results:
-        print(f"⚠️ Carrera {season}-{round} sin resultados oficiales (carrera futura o no disponible)")
-        return jsonify({"predictions": []}), 200
-
-    print(f"✅ Resultados obtenidos para {season}-{round}")
+    # Intentar obtener resultados reales, pero no es obligatorio
+    race_results = None
+    try:
+        response = requests.get(f"{API_URL}/get_race_results/{season}/{round}")
+        if response.status_code == 200:
+            race_results = response.json()
+            if "error" in race_results:
+                race_results = None
+                print(f"⚠️ Carrera {season}-{round} sin resultados oficiales (carrera futura o no disponible)")
+        else:
+            print(f"⚠️ Carrera {season}-{round} sin resultados (API status {response.status_code})")
+    except Exception as e:
+        print(f"❌ Error al obtener resultados: {str(e)}")
 
     predictions_list = []
 
     for pred in predictions:
-        bonus_data = calculate_points(pred, race_results)
+        bonus_data = calculate_points(pred, race_results) if race_results else {
+            "points": pred.points or 0,
+            "bullseye": False,
+            "hatTrick": False,
+            "udimpo": False,
+            "podium": False,
+            "omen": False
+        }
+
         predictions_list.append({
             "user": User.query.get(pred.user_id).name,
             "season": pred.season,
@@ -506,6 +515,7 @@ def get_race_predictions(season, round):
         })
 
     return jsonify({"predictions": predictions_list})
+
 
 
 
