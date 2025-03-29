@@ -8,7 +8,7 @@ load_dotenv()
 import sys
 
 # Define the API_URL
-API_URL = os.getenv("API_URL", "http://localhost:5000")  # Replace with your actual API URL
+API_URL = os.getenv("API_URL", "http://localhost:5000")     
 
 def force_print(*args, **kwargs):
     print(*args, **kwargs)
@@ -25,6 +25,9 @@ app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "sqlite:///f1_
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
+from flask_migrate import Migrate
+migrate = Migrate(app, db)
+
 
 # Modelo de usuario
 class User(db.Model):
@@ -32,6 +35,14 @@ class User(db.Model):
     name = db.Column(db.String(50), unique=True, nullable=False)
     predictions = db.relationship('Prediction', backref='user', lazy=True)  # Relación con Prediction
 
+# Pre-carga de usuarios si no existen
+with app.app_context():
+    if not User.query.first():
+        db.session.add(User(name="Renato"))
+        db.session.add(User(name="Sebastian"))
+        db.session.add(User(name="Enrique"))
+        db.session.commit()
+        force_print("✅ Usuarios base creados")
 
 
 
@@ -335,16 +346,6 @@ class Prediction(db.Model):
     best_of_the_rest = db.Column(db.String(50)) # piloto en 4-6 lugar
     midfield_master =db.Column(db.String(50)) # piloto en 7-10 lufar
     points = db.Column(db.Integer, default=0)  # Puntos obtenidos por la predicción
-
-# Crear la base de datos si no existe
-with app.app_context():
-    db.create_all()
-    
-    if not User.query.first():
-        db.session.add(User(name="Renato"))
-        db.session.add(User(name="Sebastian"))
-        db.session.add(User(name="Enrique"))
-        db.session.commit()
 
 # Obtener la última temporada disponible
 @app.route('/get_latest_season', methods=['GET'])
