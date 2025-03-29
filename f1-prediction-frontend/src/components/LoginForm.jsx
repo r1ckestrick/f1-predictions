@@ -1,57 +1,34 @@
 import React from "react";
-import { Box, Button, TextField, Typography, Paper } from "@mui/material";
+import { Box, Button, MenuItem, Select, Typography } from "@mui/material";
 
-const LoginForm = ({ onLogin }) => {
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    const username = e.target.username.value;
-    const password = e.target.password.value;
+const players = ["Renato", "Sebastian", "Enrique"]; // <- Puedes cambiar o cargar dinámico
 
-    onLogin(username, password);
-  };
+export default function LoginForm({ onSelectPlayer }) {
+  const [selectedPlayer, setSelectedPlayer] = React.useState("");
 
   return (
-    <Box
-      component={Paper}
-      elevation={3}
-      sx={{
-        bgcolor: "#1f2937",
-        p: 4,
-        maxWidth: 400,
-        mx: "auto",
-        textAlign: "center",
-        mt: 8,
-      }}
-    >
-      <Typography variant="h5" color="white" gutterBottom>
-        🔒 Iniciar Sesión
-      </Typography>
-      <form onSubmit={handleSubmit}>
-        <TextField
-          name="username"
-          label="Usuario"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          InputLabelProps={{ style: { color: "#ccc" } }}
-          InputProps={{ style: { color: "white" } }}
-        />
-        <TextField
-          name="password"
-          label="Contraseña"
-          type="password"
-          variant="outlined"
-          fullWidth
-          margin="normal"
-          InputLabelProps={{ style: { color: "#ccc" } }}
-          InputProps={{ style: { color: "white" } }}
-        />
-        <Button type="submit" variant="contained" color="primary" fullWidth sx={{ mt: 2 }}>
-          Entrar
-        </Button>
-      </form>
+    <Box textAlign="center" mt={4}>
+      <Typography variant="h6" mb={2}>Selecciona tu jugador</Typography>
+      <Select
+        value={selectedPlayer}
+        onChange={(e) => setSelectedPlayer(e.target.value)}
+        displayEmpty
+        sx={{ width: 200, mb: 2 }}
+      >
+        <MenuItem value="" disabled>Seleccionar...</MenuItem>
+        {players.map((player) => (
+          <MenuItem key={player} value={player}>{player}</MenuItem>
+        ))}
+      </Select>
+      <br />
+      <Button
+        variant="contained"
+        color="primary"
+        disabled={!selectedPlayer}
+        onClick={() => onSelectPlayer(selectedPlayer)}
+      >
+        Entrar
+      </Button>
     </Box>
   );
-};
-
-export default LoginForm;
+}

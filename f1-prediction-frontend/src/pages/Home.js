@@ -9,46 +9,34 @@ import Podium from "components/Podium";
 import RaceInfoCard from "components/RaceInfoCard";
 import RaceSelector from "components/RaceSelector";
 import PredictionsTable from "components/PredictionsTable";
-import LoginForm from "components/LoginForm";
 import { Box, Typography, Button, Paper } from "@mui/material";
 import SeasonSelector from "components/SeasonSelector";
-
 
 // ✅ ASSETS
 import f1Logo from "assets/images/f1-logo-white.png";
 
-// ✅ MOCK O UTIL LOCAL
-
-
-
-
-
 // ✅ MAIN COMPONENT
 export default function App() {
-  // --- ESTADO GLOBAL ---
   const [selectedRace, setSelectedRace] = useState("");
   const [races, setRaces] = useState([]);
   const [predictions, setPredictions] = useState([]);
   const [raceResults, setRaceResults] = useState({});
   const [loading, setLoading] = useState(true);
-  const [totalHits, setTotalHits] = useState(0);
-  const [winner, setWinner] = useState("");
   const [currentUser, setCurrentUser] = useState("");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedPredictions, setEditedPredictions] = useState({});
   const [raceInfo, setRaceInfo] = useState(null);
   const [leaderboard, setLeaderboard] = useState([]);
-  const [selectedSeason, setSelectedSeason] = useState(2025); 
+  const [selectedSeason, setSelectedSeason] = useState(2025);
   const [availableSeasons, setAvailableSeasons] = useState([]);
   const [drivers, setDrivers] = useState([]);
 
-  // --- UTILIDADES ---
   const generateSeasonList = (latest) => {
-    const startYear = 2010; // puedes cambiar este año si quieres más o menos temporadas
+    const startYear = 2010;
     return Array.from({ length: latest - startYear + 1 }, (_, i) => latest - i);
   };
-  
+
   const generateCircuitId = (circuitName) => circuitName?.toLowerCase().replace(/ /g, "_") || "unknown";
 
   const categories = {
@@ -71,47 +59,6 @@ export default function App() {
 
   const players = ["Renato", "Sebastian", "Enrique"];
 
-  const calculatePoints = (player) => {
-    if (!player || !raceResults) return 0;
-    let basePoints = 0;
-    let bonusCount = 0;
-
-    Object.keys(raceResults).forEach((key) => {
-      if (raceResults[key] === player[key]) basePoints += 40;
-    });
-
-    const bonuses = checkBonuses(player);
-    if (bonuses.bullseye) bonusCount++;
-    if (bonuses.hatTrick) bonusCount++;
-    if (bonuses.udimpo) bonusCount++;
-    if (bonuses.podium) bonusCount++;
-
-    let bonusPoints = bonusCount * 50;
-    let multiplier = [1, 1, 1.1, 1.2, 1.3][bonusCount] || 1;
-    let totalPoints = (basePoints + bonusPoints) * multiplier;
-
-    if (bonusCount === 4 && basePoints === 400) totalPoints += 200;
-    return Math.round(totalPoints);
-  };
-
-  const checkBonuses = (player) => {
-    if (!player || !raceResults) return {};
-    const correctPicks = Object.keys(raceResults).filter((key) => raceResults[key] === player[key]).length;
-    const correctPodium = ["p1", "p2", "p3"].every((pos) => player[pos] && Object.values(raceResults).includes(player[pos]));
-    const correctPodiumOrder = ["p1", "p2", "p3"].every((pos) => raceResults[pos] === player[pos]);
-    const correctHatTrick = ["pole", "p1", "fastest_lap"].every((pos) => raceResults[pos] === player[pos]);
-    const correctBullseye = ["p4", "p5", "p6", "p7", "p8", "p9", "p10"].some((pos) => raceResults[pos] === player[pos]);
-
-    return {
-      udimpo: correctPodium,
-      bullseye: correctBullseye,
-      podium: correctPodiumOrder,
-      hatTrick: correctHatTrick,
-      omen: correctPicks === Object.keys(raceResults).length,
-    };
-  };
-
-  // --- FETCHS (pueden moverse a services luego) ---
   const fetchDrivers = useCallback(() => {
     fetch(`${API_URL}/get_drivers/${selectedSeason}`)
       .then((res) => res.json())
@@ -127,11 +74,10 @@ export default function App() {
           const currentYear = parseInt(data.latest_season);
           const years = generateSeasonList(currentYear);
           setAvailableSeasons(years);
-          setSelectedSeason(currentYear); // esto asegura que empieces en la más actual
+          setSelectedSeason(currentYear);
         }
       });
   }, []);
-  
 
   useEffect(() => {
     fetch(`${API_URL}/get_all_races/${selectedSeason}`)
@@ -177,47 +123,53 @@ export default function App() {
 
   useEffect(() => {
     if (!selectedSeason || !selectedRace) return;
-    fetch(`${API_URL}/get_race_predictions/${selectedSeason}/${selectedRace}`)
-      .then((res) => res.json())
-      .then((data) => {
-        console.log("📊 Predicciones recibidas:", data.predictions);
-        if (data.predictions) setPredictions(data.predictions);
-        else setPredictions([]);
+    const predictionsUrl = `${API_URL}/get_race_predictions/${selectedSeason}/${selectedRace}`;
+    console.log("🌐 Fetching predictions from:", predictionsUrl);
+
+    fetch(predictionsUrl)
+      .then((res) => {
+        if (!res.ok) {
+          console.error(`❌ API returned status ${res.status} for predictions endpoint`);
+          if (res.status === 404) {
+            console.warn("⚠️ Predictions not found for the selected race and season.");
+            setPredictions([]);
+            return null;
+          }
+          throw new Error(`HTTP error! status: ${res.status}`);
+        }
+        return res.json();
       })
-      .catch(() => setPredictions([]));
+      .then((data) => {
+        if (data && data.predictions) {
+          console.log("📊 Predicciones recibidas:", data.predictions);
+          setPredictions(data.predictions);
+        }
+      })
+      .catch((error) => {
+        console.error("❌ Error fetching race predictions:", error);
+        setPredictions([]);
+      });
   }, [selectedSeason, selectedRace]);
 
   useEffect(() => {
-    let maxHits = 0;
-    let roundWinner = "";
-    let total = 0;
-
-    predictions.forEach((player) => {
-      const count = Object.keys(raceResults).filter((key) => raceResults[key] === player[key]).length;
-      total += count;
-      if (count > maxHits) {
-        maxHits = count;
-        roundWinner = player.user;
-      }
-    });
-
-    setTotalHits(total);
-    setWinner(roundWinner);
-  }, [predictions, raceResults]);
-
-  useEffect(() => {
     if (!selectedRace || !selectedSeason) return;
-  
+
     fetch(`${API_URL}/get_race_results/${selectedSeason}/${selectedRace}`)
       .then((res) => res.json())
       .then((data) => {
         const summary = {
-          pole: data.pole_position || "N/A",
-          p1: data.winner || "N/A",
+          pole: data.pole || "N/A",
+          p1: data.p1 || "N/A",
+          p2: data.p2 || "N/A",
+          p3: data.p3 || "N/A",
           fastest_lap: data.fastest_lap || "N/A",
-          // Puedes seguir agregando si extraes más datos del backend
+          positions_gained: data.positions_gained || "N/A",
+          positions_lost: data.positions_lost || "N/A",
+          dnf: data.dnf || [],
+          best_of_the_rest: data.best_of_the_rest || [],
+          midfield_master: data.midfield_master || []
         };
-  
+
         console.log("🏁 Resultados reales:", summary);
         setRaceResults(summary);
       })
@@ -226,21 +178,10 @@ export default function App() {
         setRaceResults({});
       });
   }, [selectedSeason, selectedRace]);
-  
 
-  const handleLogin = (username, password) => {
-    const users = {
-      Renato: "1234",
-      Sebastian: "5678",
-      Enrique: "91011",
-    };
-  
-    if (users[username] && users[username] === password) {
-      setCurrentUser(username);
-      setIsLoggedIn(true);
-    } else {
-      alert("Usuario o contraseña incorrectos");
-    }
+  const handleSelectPlayer = (playerName) => {
+    setCurrentUser(playerName);
+    setIsLoggedIn(true);
   };
 
   const handleSavePredictions = () => {
@@ -257,33 +198,45 @@ export default function App() {
       .then((res) => res.json())
       .then(() => {
         alert("✅ Predicción guardada!");
-  
-        // 🟢 Aquí vuelves a pedir las predicciones para que se actualicen
+
         fetch(`${API_URL}/get_race_predictions/${selectedSeason}/${selectedRace}`)
           .then((res) => res.json())
           .then((data) => {
             setPredictions(data.predictions);
           });
-  
+
         setIsEditing(false);
       })
       .catch(() => alert("❌ Error guardando predicciones"));
   };
-  
 
   if (!isLoggedIn) {
-    return <LoginForm onLogin={handleLogin} />;
+    return (
+      <Box mt={4} textAlign="center">
+        <Typography variant="h6" gutterBottom>Selecciona tu jugador</Typography>
+        <Box display="flex" flexDirection="column" gap={2} alignItems="center">
+          {players.map((player) => (
+            <Button
+              key={player}
+              variant="contained"
+              onClick={() => handleSelectPlayer(player)}
+            >
+              {player}
+            </Button>
+          ))}
+        </Box>
+      </Box>
+    );
   }
-  
 
   return (
-    <Box sx={{ 
-      px: { xs: 2, sm: 4 }, 
-      py: 4, 
-      maxWidth: "1200px", 
-      mx: "auto", 
-      textAlign: "center", marginBottom: "80px", // 👈 esto crea espacio para la BottomNavBar
-  }}>
+    <Box sx={{
+      px: { xs: 2, sm: 4 },
+      py: 4,
+      maxWidth: "1200px",
+      mx: "auto",
+      textAlign: "center", marginBottom: "80px",
+    }}>
       <Paper elevation={4} sx={{ p: 4, backgroundColor: "red" }}>
         <img src={f1Logo} alt="logo" width={100} />
         <Typography variant="h5" gutterBottom color="white" fontFamily="fantasy">
@@ -294,21 +247,19 @@ export default function App() {
       <Box py={3}><Podium ranking={leaderboard} /></Box>
 
       <Box mb={3} textAlign="center">
-
-  <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} justifyContent="center">
-    <SeasonSelector
-      selectedSeason={selectedSeason}
-      seasons={availableSeasons}
-      setSelectedSeason={setSelectedSeason}
-    />
-    <RaceSelector 
-      selectedRace={selectedRace} 
-      races={races} 
-      setSelectedRace={setSelectedRace} 
-    />
-  </Box>
-</Box>
-
+        <Box display="flex" flexDirection={{ xs: "column", sm: "row" }} gap={2} justifyContent="center">
+          <SeasonSelector
+            selectedSeason={selectedSeason}
+            seasons={availableSeasons}
+            setSelectedSeason={setSelectedSeason}
+          />
+          <RaceSelector
+            selectedRace={selectedRace}
+            races={races}
+            setSelectedRace={setSelectedRace}
+          />
+        </Box>
+      </Box>
 
       {loading ? <Typography>Cargando datos...</Typography> : <RaceInfoCard raceInfo={raceInfo} selectedRace={selectedRace} />}
 
@@ -321,7 +272,7 @@ export default function App() {
           {isEditing ? "Cancelar Edición" : "Editar Predicción"}
         </Button>
       </Box>
-    
+
       <PredictionsTable
         categories={categories}
         predictions={predictions}
@@ -333,12 +284,9 @@ export default function App() {
         editedPredictions={editedPredictions}
         setEditedPredictions={setEditedPredictions}
         drivers={drivers}
-        totalHits={totalHits}
-        winner={winner}
-        calculatePoints={calculatePoints}
-        checkBonuses={checkBonuses}
+        totalHits={0}
+        winner={""}
         handleSavePredictions={handleSavePredictions}
-      
       />
 
       <BottomNavBar />

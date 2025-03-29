@@ -1,7 +1,7 @@
 import React from "react";
 import { Box, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, Typography } from "@mui/material";
 
-const PointsSummary = ({ predictions, calculatePoints }) => {
+const PointsSummary = ({ predictions }) => {
   return (
     <Box mt={4}>
       <Typography variant="h6" sx={{ color: "white", fontWeight: "bold", mb: 2 }}>
@@ -20,7 +20,7 @@ const PointsSummary = ({ predictions, calculatePoints }) => {
               <TableRow key={p.user}>
                 <TableCell sx={{ color: "white" }}>{p.user}</TableCell>
                 <TableCell sx={{ color: "white", fontWeight: "bold" }}>
-                  {calculatePoints ? calculatePoints(p) : p.points || 0}
+                  {p.points ?? 0}
                 </TableCell>
               </TableRow>
             ))}
