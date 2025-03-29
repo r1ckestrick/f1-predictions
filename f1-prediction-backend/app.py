@@ -317,26 +317,25 @@ def save_predictions():
         db.session.add(prediction)
 
     try:
-        # ✅ Ahora obtenemos resultados SIN usar API_URL
         race_results = get_race_results_internal(season, race)
 
         if not race_results:
             print("⚠️ No se pudieron obtener resultados reales (carrera no disponible)")
-            prediction.points = None  # <-- le asignamos None o 0 según prefieras
-        else:
-            bonus_data = calculate_points(prediction, race_results)
-            prediction.points = bonus_data["points"]
-            print("✅ Puntos calculados:", prediction.points)
+            prediction.points = 0  # ✔️ Ponle 0 o None, lo que quieras
+            db.session.commit()    # ⚠️ COMMIT IGUAL
+            return jsonify({"message": "Predicción guardada sin puntos (carrera futura)"}), 200
 
+        # Si hay resultados
+        bonus_data = calculate_points(prediction, race_results)
+        prediction.points = bonus_data["points"]
+        print("✅ Puntos calculados:", prediction.points)
         db.session.commit()
         return jsonify({"message": "Predicción guardada correctamente"}), 200
-
 
     except Exception as e:
         db.session.rollback()
         print(f"🚨 ERROR al guardar predicción: {str(e)}")
         return jsonify({"error": f"Error al guardar la predicción: {str(e)}"}), 500
-
 
 #-------------------------FIN SISTEMA DE PREDICCIONES-------------------------#
 #-------------------------MODELOS DE BASE DE DATOS-------------------------#
