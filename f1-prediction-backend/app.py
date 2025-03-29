@@ -28,6 +28,26 @@ db = SQLAlchemy(app)
 from flask_migrate import Migrate
 migrate = Migrate(app, db)
 
+from datetime import datetime
+
+def log(msg, emoji="ℹ️", color="default"):
+    colors = {
+        "default": "\033[0m",
+        "gray": "\033[90m",
+        "red": "\033[91m",
+        "green": "\033[92m",
+        "yellow": "\033[93m",
+        "blue": "\033[94m",
+        "magenta": "\033[95m",
+        "cyan": "\033[96m",
+        "white": "\033[97m",
+    }
+    now = datetime.now().strftime("[%Y-%m-%d %H:%M:%S]")
+    color_code = colors.get(color, colors["default"])
+    reset_code = colors["default"]
+    print(f"{now} {emoji} {color_code}{msg}{reset_code}")
+    sys.stdout.flush()
+
 #-------------------------SISTEMA DE RESULTADOS-------------------------#
 
 @app.route('/get_race_results/<int:season>/<int:round>', methods=['GET'])
@@ -302,14 +322,15 @@ def save_predictions():
 
         if not race_results:
             print("⚠️ No se pudieron obtener resultados reales (carrera no disponible)")
-            return jsonify({"error": "La carrera aún no tiene resultados oficiales"}), 400
-
-        bonus_data = calculate_points(prediction, race_results)
-        prediction.points = bonus_data["points"]
-        print("✅ Puntos calculados:", prediction.points)
+            prediction.points = None  # <-- le asignamos None o 0 según prefieras
+        else:
+            bonus_data = calculate_points(prediction, race_results)
+            prediction.points = bonus_data["points"]
+            print("✅ Puntos calculados:", prediction.points)
 
         db.session.commit()
         return jsonify({"message": "Predicción guardada correctamente"}), 200
+
 
     except Exception as e:
         db.session.rollback()
@@ -441,15 +462,23 @@ def get_predictions(season):
 @app.route('/get_race_predictions/<int:season>/<int:round>', methods=['GET'])
 def get_race_predictions(season, round):
     predictions = Prediction.query.filter_by(season=season, race=round).all()
-    if not predictions:
-        return jsonify({"error": "No hay predicciones para esta carrera"}), 404
 
-    # Obtener resultados reales
+    # Obtener resultados reales solo si hay predicciones
+    if not predictions:
+        print(f"🔔 No hay predicciones para {season}-{round}")
+        return jsonify({"predictions": []}), 200
+
     response = requests.get(f"{API_URL}/get_race_results/{season}/{round}")
     if response.status_code != 200:
-        return jsonify({"error": "No se pudieron obtener resultados"}), 500
+        print(f"⚠️ Carrera {season}-{round} sin resultados (API status {response.status_code})")
+        return jsonify({"predictions": []}), 200
 
     race_results = response.json()
+    if "error" in race_results:
+        print(f"⚠️ Carrera {season}-{round} sin resultados oficiales (carrera futura o no disponible)")
+        return jsonify({"predictions": []}), 200
+
+    print(f"✅ Resultados obtenidos para {season}-{round}")
 
     predictions_list = []
 
@@ -478,6 +507,7 @@ def get_race_predictions(season, round):
         })
 
     return jsonify({"predictions": predictions_list})
+
 
 
 # Información de la carrera 
