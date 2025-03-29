@@ -357,7 +357,7 @@ class Prediction(db.Model):
     dnf = db.Column(db.String(50))  # Piloto que no terminó la carrera
     best_of_the_rest = db.Column(db.String(50)) # piloto en 4-6 lugar
     midfield_master =db.Column(db.String(50)) # piloto en 7-10 lufar
-    points = db.Column(db.Integer, default=0)  # Puntos obtenidos por la predicción
+    points = db.Column(db.Integer, default=0, nullable=True)  # ✅ permite None
 
 # Obtener la última temporada disponible
 @app.route('/get_latest_season', methods=['GET'])
