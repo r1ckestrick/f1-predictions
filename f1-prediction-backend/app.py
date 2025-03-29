@@ -31,7 +31,6 @@ migrate = Migrate(app, db)
 #-------------------------SISTEMA DE RESULTADOS-------------------------#
 
 @app.route('/get_race_results/<int:season>/<int:round>', methods=['GET'])
-
 def get_race_results(season, round):
     url = f"https://api.jolpi.ca/ergast/f1/{season}/{round}/results.json"
     response = requests.get(url)
@@ -40,9 +39,13 @@ def get_race_results(season, round):
         return jsonify({"error": "No se pudo obtener resultados"}), 500
 
     data = response.json()
-    race = data.get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0]
-    results = race.get("Results", [])
-    
+    races = data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+
+    if not races:
+        return jsonify({"error": "No hay datos de esta carrera"}), 404
+
+    results = races[0].get("Results", [])
+
     # ✅ RESULTADOS CLAVE
     race_results = {
         "pole": get_pole_position(results),
@@ -58,7 +61,6 @@ def get_race_results(season, round):
     }
 
     return jsonify(race_results)
-
 
 def get_pole_position(results):
     # Piloto que partió desde la pole (posición de grilla == 1)
@@ -225,8 +227,12 @@ def get_race_results_internal(season, round):
         return None
 
     data = response.json()
-    race = data.get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0]
-    results = race.get("Results", [])
+    races = data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
+
+    if not races:
+        return None
+
+    results = races[0].get("Results", [])
 
     return {
         "pole": get_pole_position(results),
@@ -240,6 +246,7 @@ def get_race_results_internal(season, round):
         "best_of_the_rest": get_best_of_the_rest(results),
         "midfield_master": get_midfield_master(results)
     }
+
 
 
 @app.route("/save_predictions", methods=["POST"])
@@ -260,12 +267,12 @@ def save_predictions():
     predictions = {k: v for k, v in predictions.items() if k in VALID_KEYS}
     print("📩 Recibido:", user_name, race, season)
     print("🔎 Predictions limpias:", predictions)
-
+    
     if not user_name or not race or not season:
         return jsonify({"error": "Faltan datos obligatorios"}), 400
     if not predictions:
         return jsonify({"error": "No se enviaron predicciones"}), 400
-
+    
     user = User.query.filter_by(name=user_name).first()
     if not user:
         return jsonify({"error": "Usuario no encontrado"}), 404
@@ -293,12 +300,13 @@ def save_predictions():
         # ✅ Ahora obtenemos resultados SIN usar API_URL
         race_results = get_race_results_internal(season, race)
 
-        if race_results:
-            bonus_data = calculate_points(prediction, race_results)
-            prediction.points = bonus_data["points"]
-            print("✅ Puntos calculados:", prediction.points)
-        else:
-            print("⚠️ No se pudieron obtener resultados reales")
+        if not race_results:
+            print("⚠️ No se pudieron obtener resultados reales (carrera no disponible)")
+            return jsonify({"error": "La carrera aún no tiene resultados oficiales"}), 400
+
+        bonus_data = calculate_points(prediction, race_results)
+        prediction.points = bonus_data["points"]
+        print("✅ Puntos calculados:", prediction.points)
 
         db.session.commit()
         return jsonify({"message": "Predicción guardada correctamente"}), 200
@@ -307,6 +315,7 @@ def save_predictions():
         db.session.rollback()
         print(f"🚨 ERROR al guardar predicción: {str(e)}")
         return jsonify({"error": f"Error al guardar la predicción: {str(e)}"}), 500
+
 
 #-------------------------FIN SISTEMA DE PREDICCIONES-------------------------#
 #-------------------------MODELOS DE BASE DE DATOS-------------------------#
