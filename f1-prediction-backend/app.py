@@ -552,6 +552,44 @@ with app.app_context():
         db.session.commit()
         force_print("✅ Usuarios base creados")
 
+@app.route('/recalculate_points/<int:season>/<int:round>', methods=['POST'])
+def recalculate_points_for_race(season, round):
+    updated = 0
+    failed = []
+
+    predictions = Prediction.query.filter_by(season=season, race=round).all()
+
+    if not predictions:
+        return jsonify({"message": "No hay predicciones para esta carrera"}), 200
+
+    race_results = get_race_results_internal(season, round)
+    if not race_results:
+        return jsonify({"message": "La carrera no tiene resultados aún"}), 200
+
+    for prediction in predictions:
+        if prediction.points is not None:
+            continue  # Ya calculados
+        try:
+            bonus_data = calculate_points(prediction, race_results)
+            prediction.points = bonus_data["points"]
+            updated += 1
+        except Exception as e:
+            failed.append({
+                "user": prediction.user_id,
+                "error": str(e)
+            })
+
+    try:
+        db.session.commit()
+        return jsonify({
+            "message": f"Recalculadas {updated} predicciones",
+            "errores": failed
+        }), 200
+    except Exception as e:
+        db.session.rollback()
+        return jsonify({"error": f"Error al guardar puntos recalculados: {str(e)}"}), 500
+      
+
 #-------------------------FIN MODELOS DE BASE DE DATOS-------------------------#
 
 

@@ -31,6 +31,8 @@ export default function App() {
   const [selectedSeason, setSelectedSeason] = useState(2025);
   const [availableSeasons, setAvailableSeasons] = useState([]);
   const [drivers, setDrivers] = useState([]);
+  const [hasOfficialResults, setHasOfficialResults] = useState(true);
+
 
   const generateSeasonList = (latest) => {
     const startYear = 2010;
@@ -125,7 +127,7 @@ export default function App() {
     if (!selectedSeason || !selectedRace) return;
     const predictionsUrl = `${API_URL}/get_race_predictions/${selectedSeason}/${selectedRace}`;
     console.log("🌐 Fetching predictions from:", predictionsUrl);
-
+  
     fetch(predictionsUrl)
       .then((res) => {
         if (!res.ok) {
@@ -133,6 +135,7 @@ export default function App() {
           if (res.status === 404) {
             console.warn("⚠️ Predictions not found for the selected race and season.");
             setPredictions([]);
+            setHasOfficialResults(false); // <-- ❌ No hay resultados
             return null;
           }
           throw new Error(`HTTP error! status: ${res.status}`);
@@ -143,13 +146,23 @@ export default function App() {
         if (data && data.predictions) {
           console.log("📊 Predicciones recibidas:", data.predictions);
           setPredictions(data.predictions);
+  
+          // ✅ Revisamos si hay resultados calculados (points)
+          const first = data.predictions[0];
+          if (first && first.points == null) {
+            setHasOfficialResults(false); // ⛔️ Aún no hay resultados oficiales
+          } else {
+            setHasOfficialResults(true); // ✅ Sí hay resultados
+          }
         }
       })
       .catch((error) => {
         console.error("❌ Error fetching race predictions:", error);
         setPredictions([]);
+        setHasOfficialResults(false);
       });
   }, [selectedSeason, selectedRace]);
+  
 
   useEffect(() => {
     if (!selectedRace || !selectedSeason) return;
@@ -287,6 +300,7 @@ export default function App() {
         totalHits={0}
         winner={""}
         handleSavePredictions={handleSavePredictions}
+        hasOfficialResults={hasOfficialResults}
       />
 
       <BottomNavBar />

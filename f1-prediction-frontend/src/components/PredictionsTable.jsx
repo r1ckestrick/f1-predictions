@@ -17,7 +17,8 @@ export default function PredictionsTable({
   editedPredictions,
   totalHits,
   winner,
-  handleSavePredictions
+  handleSavePredictions,
+  hasOfficialResults
 }) {
   const playerAliases = {
     Renato: "TATO",
@@ -35,6 +36,16 @@ const bonusIcons = {
   omen: "🔮"
 };
 
+if (!hasOfficialResults) {
+  return (
+    <Box mt={4} textAlign="center">
+      <Paper elevation={3} sx={{ p: 3, backgroundColor: "#374151" }}>
+        <h3 style={{ color: "white" }}>Aún no hay resultados oficiales para esta carrera.</h3>
+        <p style={{ color: "#9ca3af" }}>Cuando estén disponibles, aparecerán aquí las predicciones puntuadas.</p>
+      </Paper>
+    </Box>
+  );
+}
 
   return (
     <TableContainer
