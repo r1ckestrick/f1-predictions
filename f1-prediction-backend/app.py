@@ -223,6 +223,32 @@ def calculate_points(prediction, race_results):
 #-------------------------FIN CÁLCULO DE PUNTOS-------------------------#
 #-------------------------SISTEMA DE PREDICCIONES-------------------------#
 
+# Función para obtener resultados de carrera internos
+def get_race_results_internal(season, round):
+    url = f"https://api.jolpi.ca/ergast/f1/{season}/{round}/results.json"
+    response = requests.get(url)
+
+    if response.status_code != 200:
+        return None
+
+    data = response.json()
+    race = data.get("MRData", {}).get("RaceTable", {}).get("Races", [{}])[0]
+    results = race.get("Results", [])
+
+    return {
+        "pole": get_pole_position(results),
+        "p1": get_position(results, 1),
+        "p2": get_position(results, 2),
+        "p3": get_position(results, 3),
+        "fastest_lap": get_fastest_lap(results),
+        "positions_gained": get_positions_gained(results),
+        "positions_lost": get_positions_lost(results),
+        "dnf": get_dnf(results),
+        "best_of_the_rest": get_best_of_the_rest(results),
+        "midfield_master": get_midfield_master(results)
+    }
+
+
 @app.route("/save_predictions", methods=["POST"])
 def save_predictions():
     data = request.json
@@ -260,7 +286,6 @@ def save_predictions():
         for key, value in predictions.items():
             if hasattr(prediction, key):
                 setattr(prediction, key, value.upper() if isinstance(value, str) else value)
-    # Si no existe, crear
     else:
         print("🆕 Creando nueva predicción")
         prediction = Prediction(
@@ -272,16 +297,15 @@ def save_predictions():
         db.session.add(prediction)
 
     try:
-        # Pedimos resultados reales
-        response = requests.get(f"{API_URL}/get_race_results/{season}/{race}")
-        if response.status_code == 200:
-            race_results = response.json()
+        # ✅ Ahora obtenemos resultados SIN usar API_URL
+        race_results = get_race_results_internal(season, race)
+
+        if race_results:
             bonus_data = calculate_points(prediction, race_results)
-            prediction.points = bonus_data["points"]  # <-- SOLO guardas el número
+            prediction.points = bonus_data["points"]
             print("✅ Puntos calculados:", prediction.points)
         else:
             print("⚠️ No se pudieron obtener resultados reales")
-
 
         db.session.commit()
         return jsonify({"message": "Predicción guardada correctamente"}), 200
