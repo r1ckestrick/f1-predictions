@@ -1,0 +1,30 @@
+// ✅ CIRCUIT_IMAGES.js
+
+export const CIRCUIT_IMAGES = {
+  "Albert Park Circuit": "https://commons.wikimedia.org/wiki/Category:Melbourne_Grand_Prix_Circuit#/media/File:2014_Australian_F1_Grand_Prix_(13124899313).jpg",
+  "Shanghai International Circuit": "https://commons.wikimedia.org/wiki/Category:2024_Chinese_Grand_Prix#/media/File:Verstappen_&_Perez_Chinese_GP_2024.jpg",
+  "Suzuka Circuit": "https://commons.wikimedia.org/wiki/Category:2024_Japanese_Grand_Prix#/media/File:Forumla_1_Japan_2024.jpg",
+  "Bahrain International Circuit": "https://upload.wikimedia.org/wikipedia/commons/4/4f/Bahrain_International_Circuit--Grand_Prix_Layout.svg",
+  "Jeddah Corniche Circuit": "https://upload.wikimedia.org/wikipedia/commons/9/9f/Jeddah_Street_Circuit_2021.svg",
+  "Miami International Autodrome": "https://upload.wikimedia.org/wikipedia/commons/f/f3/Miami_Grand_Prix_Circuit_2022.svg",
+  "Imola Circuit": "https://upload.wikimedia.org/wikipedia/commons/d/db/Circuit_Imola_2009.svg",
+  "Circuit de Monaco": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Monte_Carlo_Formula_1_track_map.svg",
+  "Circuit de Barcelona-Catalunya": "https://upload.wikimedia.org/wikipedia/commons/2/27/Circuit_Catalunya.svg",
+  "Circuit Gilles Villeneuve": "https://upload.wikimedia.org/wikipedia/commons/8/81/Circuit_Gilles_Villeneuve.svg",
+  "Red Bull Ring": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Red_Bull_Ring.svg",
+  "Silverstone Circuit": "https://upload.wikimedia.org/wikipedia/commons/3/3f/Silverstone_Circuit_2011.svg",
+  "Circuit de Spa-Francorchamps": "https://upload.wikimedia.org/wikipedia/commons/4/48/Circuit_Spa.png",
+  "Hungaroring": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Hungaroring.svg",
+  "Circuit Zandvoort": "https://upload.wikimedia.org/wikipedia/commons/2/2b/Circuit_Zandvoort.svg",
+  "Monza Circuit": "https://upload.wikimedia.org/wikipedia/commons/e/ea/Monza_2017.svg",
+  "Baku City Circuit": "https://upload.wikimedia.org/wikipedia/commons/0/0b/Baku_formula1_city_circuit_map.svg",
+  "Marina Bay Street Circuit": "https://upload.wikimedia.org/wikipedia/commons/1/12/Marina_Bay_Street_Circuit_2023.svg",
+  "Circuit of the Americas": "https://upload.wikimedia.org/wikipedia/commons/9/90/Circuit_of_the_Americas.svg",
+  "Autódromo Hermanos Rodríguez": "https://upload.wikimedia.org/wikipedia/commons/e/e0/Autodromo_Hermanos_Rodriguez.svg",
+  "Interlagos Circuit": "https://upload.wikimedia.org/wikipedia/commons/8/80/Interlagos.svg",
+  "Las Vegas Street Circuit": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Las_Vegas_Grand_Prix_Circuit_2023.svg",
+  "Lusail International Circuit": "https://upload.wikimedia.org/wikipedia/commons/5/5c/Lusail_International_Circuit.svg",
+  "Yas Marina Circuit": "https://upload.wikimedia.org/wikipedia/commons/7/75/Yas_Marina_Circuit_2018.svg",
+  "Sepang International Circuit": "https://upload.wikimedia.org/wikipedia/commons/5/5e/Sepang_International_Circuit.svg",
+  "Kyalami Grand Prix Circuit": "https://upload.wikimedia.org/wikipedia/commons/e/e1/Kyalami_Grand_Prix_Circuit.svg"
+};

@@ -1,257 +1,112 @@
+// ✅ PredictionsTable.jsx completo y limpio
 import React from "react";
 import BonusHUD from "./BonusHUD";
+import NextRaceCard from "./NextRaceCard";
 import {
   Table, TableBody, TableCell, TableContainer,
-  TableHead, TableRow, Paper, Box, Button
+  TableHead, TableRow, Paper, Box, Alert, Button
 } from "@mui/material";
 
 export default function PredictionsTable({
-  categories,
-  players,
-  predictions,
-  raceResults,
-  drivers,
-  currentUser,
-  isEditing,
-  setEditedPredictions,
-  editedPredictions,
-  totalHits,
-  winner,
-  handleSavePredictions,
-  hasOfficialResults
+  categories, players, predictions, raceResults,
+  drivers, currentUser, isEditing, setEditedPredictions,
+  editedPredictions, handleSavePredictions, hasOfficialResults, nextRace
 }) {
-  const playerAliases = {
-    Renato: "TATO",
-    Sebastian: "TATAN",
-    Enrique: "KIKE"
-  };
-
-const bonusKeys = ["udimpo", "podium", "hatTrick", "bullseye", "omen"];
-
-const bonusIcons = {
-  bullseye: "🐂",
-  hatTrick: "🎩",
-  udimpo: "💀",
-  podium: "🏆",
-  omen: "🔮"
-};
-
-if (!hasOfficialResults) {
-  return (
-    <Box mt={4} textAlign="center">
-      <Paper elevation={3} sx={{ p: 3, backgroundColor: "#374151" }}>
-        <h3 style={{ color: "white" }}>Aún no hay resultados oficiales para esta carrera.</h3>
-        <p style={{ color: "#9ca3af" }}>Cuando estén disponibles, aparecerán aquí las predicciones puntuadas.</p>
-      </Paper>
-    </Box>
-  );
-}
+  const bonusKeys = ["udimpo", "podium", "hatTrick", "bullseye", "omen"];
+  const visibleCategories = Object.keys(categories).filter(key => !bonusKeys.includes(key));
 
   return (
-    <TableContainer
-      component={Paper}
-      sx={{
-        mt: 4,
-        width: "100%",
-        maxWidth: "100vw",
-        overflowX: "hidden",
-        bgcolor: "#1f2937",
-      }}
-    >
+    <Box>
 
-      <Table
-        size="small"
-        sx={{
-          width: "100%",
-          fontSize: { xs: "0.45rem", sm: "0.8rem" },
-          tableLayout: "fixed",
-          textAlign: "center"
-        }}
+      {/* ✅ TARJETA PRÓXIMA CARRERA */}
+      {nextRace && (
+        <Box mb={2}><NextRaceCard race={nextRace} /></Box>
+      )}
+
+      <Box sx={{ position: "sticky", top: 0, zIndex: 20, bgcolor: "#121212" }}>
+        {!hasOfficialResults && (
+          <Alert severity="info" 
+            sx={{ 
+              mb: 2, 
+              borderRadius: 2, 
+              position: "sticky", 
+              left: 0, 
+              zIndex: 20, 
+              bgcolor: "#1976d2", 
+              color: "white" 
+            }}>
+            Aún no hay resultados oficiales para esta carrera.
+          </Alert>
+        )}
+      </Box>
+
+      <TableContainer
+        component={Paper}
+        sx={{ mt: 2, width: "100%", overflowX: "auto", bgcolor: "#121212", borderRadius: 3, boxShadow: "0 0 20px rgba(0,0,0,0.5)" }}
       >
 
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{textAlign: "center", color: "white", fontWeight: "bold", width: "30%" }}>Categoría</TableCell>
-            {players.map((player) => (
-              <TableCell key={player} sx={{ textAlign: "center", color: "white", fontWeight: "bold", width: `${40 / players.length}%` }}>
-                {playerAliases[player] || player}
-              </TableCell>
-            ))}
-            <TableCell sx={{textAlign: "center", color: "white", fontWeight: "bold", width: "30%" }}>Resultados</TableCell>
-          </TableRow>
-        </TableHead>
-
-        <TableBody>
-          {categories &&
-            Object.keys(categories).map((key) => (
-              <React.Fragment key={key}>
-                {key === "bullseye" && (
-                  <TableRow>
-                    <TableCell
-                      colSpan={players.length + 2}
-                      sx={{
-                        borderBottom: "3px solid #9ca3af",
-                        backgroundColor: "#111827",
-                        py: 2,
-                        textAlign: "center",
-                        color: "#9ca3af",
-                        fontWeight: "bold",
-                        fontSize: "0.7rem",
-                        letterSpacing: "0.05em",
-                      }}
-                    >
-                      BONIFICACIONES
-                    </TableCell>
-                  </TableRow>
-                )}
-
-        <TableRow>
-          <TableCell sx={{ textAlign: "center", color: "white", fontWeight: "bold" }}>
-            {categories[key]}
-          </TableCell>
-
-          {players.map((player) => {
-                const prediction = predictions && predictions.find((p) => p.user === player);
-                const isBonusCategory = bonusKeys.includes(key);
-
-                const bonusValue = isBonusCategory ? prediction?.[key] : null;
-                const value = isBonusCategory
-                    ? bonusValue ? "✔️" : "❌"               
-                    : prediction?.[key] || "";
-
-                const isArrayResult = Array.isArray(raceResults[key]);
-                const isHit = !isBonusCategory && (
-                    isArrayResult
-                        ? raceResults[key]?.includes(prediction?.[key])
-                        : prediction?.[key] === raceResults[key]
-                );
-
-                const cellColor = isBonusCategory
-                    ? bonusValue
-                        ? "#22c55e"
-                        : "#374151"
-                    : isHit
-                    ? "#22c55e"
-                    : prediction?.[key]
-                    ? "#ef4444"
-                    : "#374151";
-                    console.log("Prediction completa:", prediction);
-                return (
-                <TableCell
-                    key={player}
-                    sx={{
-                    bgcolor: cellColor,
-                    color: "white",
-                    fontWeight: "bold",
-                    }}
-                >
-                    {/* ✅ MOSTRAR */}
-                    {isBonusCategory ? (
-                        value
-                    ) : currentUser === player && isEditing ? (
-                        <select
-                            value={editedPredictions[player]?.[key] ?? prediction?.[key] ?? ""}
-                            onChange={(e) => {
-                            setEditedPredictions((prev) => ({
-                                ...prev,
-                                [player]: {
-                                ...prev[player],
-                                [key]: e.target.value,
-                                },
-                            }));
-                            }}
-                            style={{
-                            backgroundColor: "#374151",
-                            color: "white",
-                            padding: "0.3rem",
-                            borderRadius: "4px",
-                            }}
-                        >
-                            <option value="">Seleccionar piloto</option>
-                            {drivers.map((driver) => (
-                            <option key={driver.code} value={driver.code}>
-                                {driver.code}
-                            </option>
-                            ))}
-                        </select>
-                    ) : (
-                        value
-                    )}
-                </TableCell>
-                );
-            })}
-
-
-          <TableCell
-            sx={{
-              bgcolor: "#4b5563",
-              fontWeight: "bold",
-              color: "white",
-            }}
-          >
-            {/* Mostrar resultados */}
-            {key === "udimpo"
-              ? "Total Aciertos:"
-              : key === "podium"
-              ? totalHits
-              : key === "hatTrick"
-              ? "Ganador Ronda:"
-              : Array.isArray(raceResults[key])
-              ? raceResults[key].length > 0
-                ? raceResults[key].join(", ")
-                : "-"
-              : raceResults[key] || "-"}
-          </TableCell>
-        </TableRow>
-                </React.Fragment>
+        <Table size="small" sx={{ tableLayout: "fixed", minWidth: "600px", fontFamily: "'Barlow Condensed', sans-serif", borderCollapse: "separate", borderSpacing: "0px 2px" }}>
+          <TableHead>
+            <TableRow>
+              <TableCell sx={{ position: "sticky", left: 0, zIndex: 10, bgcolor: "#121212", fontWeight: "bold", width: "40px", maxWidth: "40px", color: "white", borderRight: "1px solid #333", textAlign: "center" }}>🏁</TableCell>
+              {players.map(player => (
+                <TableCell key={player} sx={{ color: "#ddd", fontWeight: "bold", textAlign: "center", width: "45px", maxWidth: "45px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{player}</TableCell>
               ))}
+              <TableCell sx={{ position: "sticky", right: 0, zIndex: 10, bgcolor: "#121212", fontWeight: "bold", width: "40px", maxWidth: "40px", color: "white", borderLeft: "1px solid #333", textAlign: "center" }}>✔️</TableCell>
+            </TableRow>
+          </TableHead>
 
-        <TableRow>
-          <TableCell
-            sx={{
-              color: "white",
-              fontWeight: "bold",
-              borderTop: "2px solid #9ca3af",
-              backgroundColor: "#111827",
-            }}
-          >
-            PUNTOS
-          </TableCell>
-          {players.map((player) => {
-            const prediction = predictions.find((p) => p.user.toLowerCase() === player.toLowerCase());
-            return (
-              <TableCell
-                key={player}
-                sx={{
-                  color: "white",
-                  fontWeight: "bold",
-                  borderTop: "2px solid #9ca3af",
-                  backgroundColor: "#1f2937",
-                }}
-              >
-                {prediction?.points ?? "-"}
-                <BonusHUD prediction={prediction} />
-              </TableCell>
-            );
-          })}
-          <TableCell sx={{ backgroundColor: "#4b5563" }} />
-        </TableRow>
+          <TableBody>
+            {visibleCategories.map(key => (
+              <TableRow key={key}>
+                <TableCell sx={{ position: "sticky", left: 0, bgcolor: "#121212", color: "white", fontWeight: "bold", width: "40px", maxWidth: "40px", borderRight: "1px solid #333", textAlign: "center" }}>{categories[key]}</TableCell>
+                {players.map(player => {
+                  const prediction = predictions.find(p => p.user.toLowerCase() === player.toLowerCase());
+                  const value = prediction?.[key] || "";
+                  const isArrayResult = Array.isArray(raceResults[key]);
+                  const isHit = raceResults[key] && (isArrayResult ? raceResults[key]?.includes(value) : raceResults[key] === value);
+                  const cellColor = !raceResults[key] ? "#374151" : isHit ? "#15803d" : value ? "#b91c1c" : "#374151";
+                  return (
+                    <TableCell key={player} sx={{ bgcolor: cellColor, color: "white", fontWeight: "bold", width: "45px", maxWidth: "45px", textAlign: "center" }}>
+                      {currentUser === player && isEditing ? (
+                        <select
+                          value={editedPredictions[player]?.[key] ?? value}
+                          onChange={e => setEditedPredictions(prev => ({ ...prev, [player]: { ...prev[player], [key]: e.target.value } }))}
+                          style={{ backgroundColor: "#374151", color: "white", padding: "0.2rem", borderRadius: "4px", width: "100%" }}
+                        >
+                          <option value="">-</option>
+                          {drivers.map(driver => (
+                            <option key={driver.code} value={driver.code}>{driver.code}</option>
+                          ))}
+                        </select>
+                      ) : value}
+                    </TableCell>
+                  );
+                })}
+                <TableCell sx={{ position: "sticky", right: 0, bgcolor: "#222", color: "white", fontWeight: "bold", width: "40px", maxWidth: "40px", borderLeft: "1px solid #333", textAlign: "center" }}>{Array.isArray(raceResults[key]) ? raceResults[key]?.join(", ") : raceResults[key] || "-"}</TableCell>
+              </TableRow>
+            ))}
+
+            {/* ---------- FILA PUNTAJE ---------- */}
+            <TableRow>
+              <TableCell sx={{ position: "sticky", left: 0, bgcolor: "#111", color: "white", fontWeight: "bold", width: "40px", maxWidth: "40px" }}>Puntaje</TableCell>
+              {players.map(player => {
+                const prediction = predictions.find(p => p.user.toLowerCase() === player.toLowerCase());
+                return (
+                  <TableCell key={player} sx={{ bgcolor: "#111", color: "white", fontWeight: "bold", textAlign: "center", width: "45px", maxWidth: "45px" }}>
+                    {prediction?.points ?? "-"} <BonusHUD prediction={prediction} />
+                  </TableCell>
+                );
+              })}
+              <TableCell sx={{ position: "sticky", right: 0, bgcolor: "#111", width: "40px", maxWidth: "40px" }} />
+            </TableRow>
+
+          </TableBody>
+        </Table>
 
 
-        </TableBody>
-      </Table>
 
-      {isEditing && (
-        <Box mt={2} textAlign="center">
-          <Button
-            onClick={handleSavePredictions}
-            variant="contained"
-            color="success"
-          >
-            Guardar Predicciones
-          </Button>
-        </Box>
-      )}
-    </TableContainer>
+      </TableContainer>
+    </Box>
   );
 }

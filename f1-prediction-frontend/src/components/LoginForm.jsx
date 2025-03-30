@@ -1,34 +1,47 @@
 import React from "react";
-import { Box, Button, MenuItem, Select, Typography } from "@mui/material";
+import { Box, Button, Typography } from "@mui/material";
 
-const players = ["Renato", "Sebastian", "Enrique"]; // <- Puedes cambiar o cargar dinámico
+const players = ["Renato", "Sebastian", "Enrique"]; // <-- puedes modificar
 
 export default function LoginForm({ onSelectPlayer }) {
-  const [selectedPlayer, setSelectedPlayer] = React.useState("");
-
   return (
-    <Box textAlign="center" mt={4}>
-      <Typography variant="h6" mb={2}>Selecciona tu jugador</Typography>
-      <Select
-        value={selectedPlayer}
-        onChange={(e) => setSelectedPlayer(e.target.value)}
-        displayEmpty
-        sx={{ width: 200, mb: 2 }}
+    <Box
+      textAlign="center"
+      mt={10}
+      p={4}
+      sx={{
+        bgcolor: "#1c1c1e",
+        borderRadius: 3,
+        boxShadow: "0 0 10px rgba(255,255,255,0.05)",
+        maxWidth: 400,
+        mx: "auto",
+      }}
+    >
+      <Typography
+        variant="h6"
+        mb={3}
+        sx={{ fontFamily: "'Barlow Condensed'", color: "white" }}
       >
-        <MenuItem value="" disabled>Seleccionar...</MenuItem>
-        {players.map((player) => (
-          <MenuItem key={player} value={player}>{player}</MenuItem>
-        ))}
-      </Select>
-      <br />
-      <Button
-        variant="contained"
-        color="primary"
-        disabled={!selectedPlayer}
-        onClick={() => onSelectPlayer(selectedPlayer)}
-      >
-        Entrar
-      </Button>
+        ¿Quién eres?
+      </Typography>
+
+      {players.map((player) => (
+        <Button
+          key={player}
+          variant="contained"
+          color="primary"
+          onClick={() => onSelectPlayer(player)}
+          fullWidth
+          sx={{
+            mb: 1.5,
+            fontFamily: "'Barlow Condensed'",
+            fontWeight: "bold",
+            textTransform: "none",
+          }}
+        >
+          {player}
+        </Button>
+      ))}
     </Box>
   );
 }
