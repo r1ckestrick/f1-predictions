@@ -88,9 +88,9 @@ useEffect(() => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        season: raceInfo.season,  // <--- esto no estaba
-        round: raceInfo.round,    // <--- esto no estaba
-        race: raceInfo.round,     // <--- este es obligatorio para el backend
+        season: raceInfo.season,  
+        round: raceInfo.round,    
+        race: raceInfo.round,     
         predictions: Object.entries(editedPredictions).map(([player, preds]) => ({
           user: player,
           ...preds

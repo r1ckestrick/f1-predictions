@@ -269,13 +269,17 @@ def get_race_results_internal(season, round):
 
 
 # Ruta para guardar predicciones
+print("=== PRODUCTION LOG ===")
+print("Payload recibido:", data)
+print("Predictions es tipo:", type(data.get("predictions")))
+print("=====================")
 @app.route("/save_predictions", methods=["POST"])
 def save_predictions():
     data = request.json
     user_name = data.get("user")
-    race = int(data.get("race")) if data.get("race") else None
+    race = int(data.get("race") or data.get("round") or 0) or None  # ✅ acepta race o round
     season = int(data.get("season")) if data.get("season") else None
-    predictions = data.get("predictions", {})
+    predictions = data.get("predictions", [])
 
     VALID_KEYS = {
         "pole", "p1", "p2", "p3",
@@ -335,6 +339,7 @@ def save_predictions():
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Error al guardar la predicción: {str(e)}"}), 500
+
 
 
 
