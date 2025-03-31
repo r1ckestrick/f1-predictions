@@ -3,7 +3,6 @@ import { Box, FormControl, InputLabel, Select, MenuItem } from "@mui/material";
 
 export default function RaceSelector({ races, selectedRace, setSelectedRace }) {
   if (!races || races.length === 0) return null;
-
   return (
     <Box mt={3} textAlign="center">
       <FormControl
@@ -15,14 +14,23 @@ export default function RaceSelector({ races, selectedRace, setSelectedRace }) {
           mx: "auto",
         }}
       >
-        <InputLabel id="race-select-label" sx={{ fontWeight: "900", color: "Gray" }}>
+        <InputLabel 
+          id="race-select-label" 
+          sx={{ fontWeight: "900", color: "white" }} // ← cambiamos a blanco
+        >
           Carrera
         </InputLabel>
         <Select
           labelId="race-select-label"
           value={selectedRace}
           onChange={(e) => setSelectedRace(e.target.value)}
-          sx={{ color: "white", borderColor: "white" }}
+          sx={{ 
+            color: "white", 
+            "& .MuiSelect-icon": { color: "white" }, // ← flecha blanca
+            "& .MuiOutlinedInput-notchedOutline": { borderColor: "white" }, // ← borde blanco
+            "&:hover .MuiOutlinedInput-notchedOutline": { borderColor: "white" },
+            "&.Mui-focused .MuiOutlinedInput-notchedOutline": { borderColor: "white" }
+          }}
         >
           {races.map((race) => (
             <MenuItem key={race.round} value={race.round}>

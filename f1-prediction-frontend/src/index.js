@@ -1,15 +1,18 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import './index.css';
-import App from './App';  // Asegúrate de tener un archivo App.jsx que contenga tus rutas.
+import App from './App';
 import reportWebVitals from './reportWebVitals';
-import { BrowserRouter } from "react-router-dom"; // <-- IMPORTANTE
+import { BrowserRouter } from "react-router-dom";
+import { UserProvider } from './context/UserContext'; // Importamos el contexto de usuario
 
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <BrowserRouter>   {/* ENVUELVE TODA LA APLICACIÓN */}
-      <App />          {/* Aquí cargas el componente principal que tendrá las rutas */}
+    <BrowserRouter>
+      <UserProvider>      {/* Proveedor de contexto para el usuario */}
+        <App />
+      </UserProvider>
     </BrowserRouter>
   </React.StrictMode>
 );

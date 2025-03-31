@@ -1,19 +1,20 @@
-// ✅ RaceCard.jsx
 import { Box, Typography } from "@mui/material";
-import { CIRCUIT_IMAGES } from "../data/circuitImages";
+import { RACE_IMAGES } from "../data/raceImages";
+import RaceAlert from "./RaceAlert";
 
-const RaceCard = ({ race, label }) => {
+export default function NextRaceCard({ race }) {
   if (!race) return null;
 
-  const imageUrl = CIRCUIT_IMAGES[race.circuitName] || '/assets/images/mock-circuit.png';
+  const raceImage = RACE_IMAGES[race.raceName] || "/mock-silverstone.jpeg";
 
   return (
+    
     <Box
       mb={3}
       sx={{
         height: 180,
         borderRadius: 2,
-        backgroundImage: `url('${imageUrl}')`,
+        backgroundImage: `url(${raceImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         position: "relative",
@@ -22,17 +23,16 @@ const RaceCard = ({ race, label }) => {
       }}
     >
       <Box sx={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
-      <Box sx={{ position: "absolute", bottom: 8, left: 8 }}>
-        <Typography variant="caption" color="white">{label}</Typography>
-        <Typography variant="body1" color="white" fontWeight="bold" sx={{ fontFamily: "'Barlow Condensed'" }}>
-          {race.raceName}
-        </Typography>
-        <Typography variant="caption" color="white">
-          {race.date}
-        </Typography>
+      
+      <Box sx={{ position: "absolute", bottom: 8, left: 8 }}>    
+      <Box mb={2}> {race && <RaceAlert race={race} />}</Box> 
+        <Typography variant="caption" color="white">Ronda</Typography>
+        <Typography variant="body1" color="white" fontWeight="bold">{race?.raceName || "Sin nombre"}</Typography>
+        <Typography variant="caption" color="white">Fecha: {race?.date || "-"}</Typography>
+        
       </Box>
+      
     </Box>
+    
   );
-};
-
-export default RaceCard;
+}

@@ -268,13 +268,13 @@ def get_race_results_internal(season, round):
     }
 
 
-
+# Ruta para guardar predicciones
 @app.route("/save_predictions", methods=["POST"])
 def save_predictions():
     data = request.json
     user_name = data.get("user")
-    race = data.get("race")
-    season = data.get("season")
+    race = int(data.get("race")) if data.get("race") else None
+    season = int(data.get("season")) if data.get("season") else None
     predictions = data.get("predictions", {})
 
     VALID_KEYS = {
@@ -284,58 +284,59 @@ def save_predictions():
         "best_of_the_rest", "midfield_master"
     }
 
-    predictions = {k: v for k, v in predictions.items() if k in VALID_KEYS}
-    print("📩 Recibido:", user_name, race, season)
-    print("🔎 Predictions limpias:", predictions)
-    
-    if not user_name or not race or not season:
+    if not predictions or not race or not season:
         return jsonify({"error": "Faltan datos obligatorios"}), 400
-    if not predictions:
-        return jsonify({"error": "No se enviaron predicciones"}), 400
-    
-    user = User.query.filter_by(name=user_name).first()
-    if not user:
-        return jsonify({"error": "Usuario no encontrado"}), 404
 
-    # Buscar predicción previa
-    prediction = Prediction.query.filter_by(user_id=user.id, race=race, season=season).first()
+    # 💡 FLEXIBLE: aceptar dict o lista
+    if isinstance(predictions, dict):
+        predictions = [predictions]
 
-    # Si existe, editar
-    if prediction:
-        print("📝 Editando predicción existente")
-        for key, value in predictions.items():
-            if hasattr(prediction, key):
-                setattr(prediction, key, value.upper() if isinstance(value, str) else value)
-    else:
-        print("🆕 Creando nueva predicción")
-        prediction = Prediction(
-            user_id=user.id,
-            race=race,
-            season=season,
-            **{k: (v.upper() if isinstance(v, str) else v) for k, v in predictions.items()}
-        )
-        db.session.add(prediction)
+    for pred in predictions:
+        user_name = pred.get("user")
+        if not user_name:
+            return jsonify({"error": "Falta el nombre de usuario"}), 400
+
+        pred_clean = {k: v for k, v in pred.items() if k in VALID_KEYS}
+        if not pred_clean:
+            return jsonify({"error": f"Predicción vacía para {user_name}"}), 400
+
+        user = User.query.filter_by(name=user_name).first()
+        if not user:
+            return jsonify({"error": f"Usuario {user_name} no encontrado"}), 404
+
+        prediction = Prediction.query.filter_by(user_id=user.id, race=race, season=season).first()
+        if prediction:
+            for key, value in pred_clean.items():
+                if hasattr(prediction, key):
+                    setattr(prediction, key, value.upper() if isinstance(value, str) else value)
+        else:
+            prediction = Prediction(
+                user_id=user.id,
+                race=race,
+                season=season,
+                **{k: (v.upper() if isinstance(v, str) else v) for k, v in pred_clean.items()}
+            )
+            db.session.add(prediction)
 
     try:
         race_results = get_race_results_internal(season, race)
-
         if not race_results:
-            print("⚠️ No se pudieron obtener resultados reales (carrera no disponible)")
-            prediction.points = 0  # ✔️ Ponle 0 o None, lo que quieras
-            db.session.commit()    # ⚠️ COMMIT IGUAL
-            return jsonify({"message": "Predicción guardada sin puntos (carrera futura)"}), 200
+            db.session.commit()
+            return jsonify({"message": "Predicciones guardadas sin puntos"}), 200
 
-        # Si hay resultados
-        bonus_data = calculate_points(prediction, race_results)
-        prediction.points = bonus_data["points"]
-        print("✅ Puntos calculados:", prediction.points)
+        for pred in predictions:
+            user = User.query.filter_by(name=pred["user"]).first()
+            prediction = Prediction.query.filter_by(user_id=user.id, race=race, season=season).first()
+            prediction.points = calculate_points(prediction, race_results)["points"]
+
         db.session.commit()
-        return jsonify({"message": "Predicción guardada correctamente"}), 200
+        return jsonify({"message": "Predicciones guardadas correctamente"}), 200
 
     except Exception as e:
         db.session.rollback()
-        print(f"🚨 ERROR al guardar predicción: {str(e)}")
         return jsonify({"error": f"Error al guardar la predicción: {str(e)}"}), 500
+
+
 
 #-------------------------FIN SISTEMA DE PREDICCIONES-------------------------#
 #-------------------------MODELOS DE BASE DE DATOS-------------------------#
@@ -372,6 +373,12 @@ def get_latest_season():
     
     return jsonify({"error": "No se pudo obtener la última temporada"}), 500
 
+# Ruta para obtener todas las temporadas disponibles
+@app.route("/get_all_seasons")
+def get_all_seasons():
+    seasons = [2023, 2024, 2025, 2026]  # puedes cambiarlo por un query real si quieres
+    return jsonify({"seasons": seasons})
+
 #  Ruta para obtener todas las carreras de una temporada
 @app.route('/get_all_races/<int:season>', methods=['GET'])
 def get_all_races(season):
@@ -382,7 +389,8 @@ def get_all_races(season):
         races = [
             {
                 "round": race["round"],
-                "raceName": race["raceName"]
+                "raceName": race["raceName"],
+                "date": race["date"],
             }
             for race in data.get("MRData", {}).get("RaceTable", {}).get("Races", [])
         ]
@@ -534,6 +542,7 @@ def get_race_info(season, round):
             circuit = race.get("Circuit", {})
 
             race_info = {
+                "season": season,
                 "raceName": race.get("raceName", "Gran Premio Desconocido"),
                 "round": race.get("round", round),
                 "date": race.get("date", "Fecha no disponible"),

@@ -1,7 +1,8 @@
 import React from "react";
 import { Box, Button, Typography } from "@mui/material";
 
-const players = ["Renato", "Sebastian", "Enrique"]; // <-- puedes modificar
+const players = ["Renato", "Sebastian", "Enrique"];
+const admins = ["Renato"]; 
 
 export default function LoginForm({ onSelectPlayer }) {
   return (
@@ -30,7 +31,7 @@ export default function LoginForm({ onSelectPlayer }) {
           key={player}
           variant="contained"
           color="primary"
-          onClick={() => onSelectPlayer(player)}
+          onClick={() => onSelectPlayer({ name: player, isAdmin: admins.includes(player) })}
           fullWidth
           sx={{
             mb: 1.5,

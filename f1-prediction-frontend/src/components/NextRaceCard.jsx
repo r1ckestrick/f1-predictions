@@ -1,18 +1,18 @@
 import { Box, Typography } from "@mui/material";
-import { CIRCUIT_IMAGES } from "../data/circuitImages";
+import { RACE_IMAGES } from "../data/raceImages";
 
 export default function NextRaceCard({ race }) {
   if (!race) return null;
 
-  const circuitImage = CIRCUIT_IMAGES[race.circuitName] || '../public/mock-circuit.png';
+  const raceImage = RACE_IMAGES[race.raceName] || "/mock-silverstone.jpeg";
 
-  return (
+return (
     <Box
       mb={3}
       sx={{
         height: 180,
         borderRadius: 2,
-        backgroundImage: `url('${circuitImage}')`,
+        backgroundImage: `url(${raceImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         position: "relative",
@@ -23,12 +23,8 @@ export default function NextRaceCard({ race }) {
       <Box sx={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
       <Box sx={{ position: "absolute", bottom: 8, left: 8 }}>
         <Typography variant="caption" color="white">Próxima Carrera</Typography>
-        <Typography variant="body1" color="white" fontWeight="bold">
-          {race.raceName}
-        </Typography>
-        <Typography variant="caption" color="white">
-          Fecha: {race.date}
-        </Typography>
+        <Typography variant="body1" color="white" fontWeight="bold">{race?.raceName || "Sin nombre"}</Typography>
+        <Typography variant="caption" color="white">Fecha: {race?.date || "-"}</Typography>
       </Box>
     </Box>
   );

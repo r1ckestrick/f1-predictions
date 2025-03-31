@@ -3,32 +3,33 @@ import { useState, useEffect } from "react";
 import * as React from "react";
 import API_URL from "config.js";
 import "@fontsource/barlow-condensed";
-import { CIRCUIT_IMAGES } from "../data/circuitImages";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext";
 
 // ✅ COMPONENTES
 import BottomNavBar from "../components/BottomNavBar";
 import Podium from "components/Podium";
 import PredictionsTable from "components/PredictionsTable";
 import LoginForm from "components/LoginForm";
-import { Box, Typography, Button } from "@mui/material";
-import f1Logo from "assets/images/f1-logo-white.png";
+import LastRaceCard from "../components/LastRaceCard";
+import useRaceData from "../hooks/useRaceData";
+import { Box, Button } from "@mui/material";
 
 // ✅ HOME
 export default function Home() {
   const [selectedSeason, setSelectedSeason] = useState(2025);
-  const [races, setRaces] = useState([]);
   const [leaderboard, setLeaderboard] = useState([]);
   const [predictions, setPredictions] = useState([]);
-  const [raceResults, setRaceResults] = useState({});
   const [drivers, setDrivers] = useState([]);
-  const [currentUser, setCurrentUser] = useState(null);
+  const { currentUser, selectUser } = useUser();
   const [isEditing, setIsEditing] = useState(false);
   const [editedPredictions, setEditedPredictions] = useState({});
-  const [hasOfficialResults, setHasOfficialResults] = useState(false);
-  const [lastRace, setLastRace] = useState(null);
-  const [nextRace, setNextRace] = useState(null);
   const navigate = useNavigate();
+
+  const { lastRace, nextRace} = useRaceData(selectedSeason);
+
+  const [raceResults, setRaceResults] = useState({});
+  const [hasOfficialResults, setHasOfficialResults] = useState(false);
 
   const categories = {
     pole: "POLE", p1: "P1", p2: "P2", p3: "P3", fastest_lap: "FL",
@@ -53,33 +54,12 @@ export default function Home() {
       .then((data) => setDrivers(data.drivers || []));
   }, [selectedSeason]);
 
-  // ✅ CARGA DE CARRERAS + LEADERBOARD
+  // ✅ CARGA LEADERBOARD
   useEffect(() => {
-    if (!selectedSeason) return;
-
-    fetch(`${API_URL}/get_all_races/${selectedSeason}`)
-      .then((res) => res.json())
-      .then(async (data) => {
-        const allRaces = data.races || [];
-        const racesWithDetails = await Promise.all(
-          allRaces.map(async (race) => {
-            const res = await fetch(`${API_URL}/get_race_info/${selectedSeason}/${race.round}`);
-            return await res.json();
-          })
-        );
-        const today = new Date();
-        const pastRaces = racesWithDetails.filter(r => new Date(r.date) <= today);
-        const futureRaces = racesWithDetails.filter(r => new Date(r.date) > today);
-
-        setLastRace(pastRaces[pastRaces.length - 1] || null);
-        setNextRace(futureRaces[0] || null);
-        setRaces(racesWithDetails);
-      });
-
     fetch(`${API_URL}/leaderboard`)
       .then((res) => res.json())
-      .then((data) => setLeaderboard(data));
-  }, [selectedSeason]);
+      .then(setLeaderboard);
+  }, []);
 
   // ✅ CARGA PREDICCIONES PRÓXIMA CARRERA
   useEffect(() => {
@@ -89,95 +69,98 @@ export default function Home() {
       .then((data) => setPredictions(data.predictions || []));
   }, [nextRace, selectedSeason]);
 
-  // ✅ GUARDAR PREDICCIONES
-  function handleSavePredictions() {
-    if (!nextRace || !currentUser) return;
-    fetch(`${API_URL}/save_predictions`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        user: currentUser,
-        season: selectedSeason,
-        race: nextRace.round,
-        predictions: editedPredictions[currentUser] || {}
-      })
+  // ✅ CARGA RESULTADOS PRÓXIMA CARRERA
+useEffect(() => {
+  if (!nextRace || !nextRace.round) return;
+
+  fetch(`${API_URL}/get_race_results/${selectedSeason}/${nextRace.round}`)
+    .then(res => {
+      if (res.status === 404) {
+        // La carrera aún no tiene resultados
+        setRaceResults(null);
+        setHasOfficialResults(false);
+        return null;
+      }
+      return res.json();
     })
-      .then(res => res.json())
-      .then(data => {
-        alert(data.message || "Predicciones guardadas");
-        setIsEditing(false);
-      })
-      .catch(() => alert("Error al guardar predicciones"));
-  }
+    .then(data => {
+      if (data) {
+        setRaceResults(data);
+        setHasOfficialResults(!!data?.p1);
+      }
+    })
+    .catch(err => {
+      console.error("Error obteniendo resultados", err);
+      setRaceResults(null);
+      setHasOfficialResults(false);
+    });
+}, [nextRace, selectedSeason]);
+
 
   // ✅ LOGIN SIMPLE
   if (!currentUser) {
     return (
       <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white" }}>
-        <LoginForm onSelectPlayer={setCurrentUser} />
+      <LoginForm onSelectPlayer={(user) => selectUser(user)} />
       </Box>
     );
   }
 
+  // ✅ GUARDAR PREDICCIONES
+  function handleSavePredictions() {
+    if (!nextRace || !currentUser) return;
+
+    fetch(`${API_URL}/save_predictions`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+          season: nextRace.season,
+          round: nextRace.round,
+          user: currentUser.name,
+          race: nextRace.round,
+          predictions: [{
+              user: currentUser.name,
+              ...editedPredictions[currentUser.name]
+          }]
+      })
+  })
+    .then(res => res.json())
+    .then(data => {
+        alert(data.message || "Predicciones guardadas");
+        setIsEditing(false);
+    })
+    .catch(() => alert("Error al guardar predicciones"));
+}
+
+
   // ✅ UI PRINCIPAL
   return (
-    <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white" }}>
-
-      {/* HEADER */}
-      <Box mb={3} display="flex" justifyContent="space-between" alignItems="center">
-        <Box display="flex" alignItems="center" gap={1}>
-          <img src={f1Logo} alt="logo" width={50} />
-          <Typography variant="h6" sx={{ fontFamily: "'Barlow Condensed'", fontWeight: "bold" }}>
-            Prediction Party
-          </Typography>
-        </Box>
-        <Button size="small" variant="outlined" color="error" onClick={() => setCurrentUser(null)}>
-          Salir
-        </Button>
-      </Box>
-
-      {/* PODIO */}
-      <Box mb={3} sx={{ bgcolor: "#1c1c1e", borderRadius: 2, boxShadow: "0 0 4px rgba(255,255,255,0.05)", p: 2 }}>
+    <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "100%", mx: "auto", color: "white" }}>
+      <Box mb={3} sx={{ bgcolor: "#191919", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white" }}>
+        {/* PODIO */}
         <Podium ranking={leaderboard} />
+
+        <Box mb={3} />
+
+        {/* ÚLTIMA CARRERA */}
+        {lastRace && <LastRaceCard race={lastRace} 
+        onClick={() => navigate(`/history?season=${selectedSeason}&round=${lastRace.round}`)} />}
       </Box>
 
-      {/* ÚLTIMA CARRERA */}
-      {lastRace && (
-        <Button onClick={() => navigate(`/history?season=${selectedSeason}&round=${lastRace.round}`)} fullWidth sx={{ mb: 2 }}>
-          <Box sx={{ height: 180, borderRadius: 2, overflow: "hidden", position: "relative", boxShadow: "0 0 4px rgba(255,255,255,0.05)" }}>
-            <img 
-              src={CIRCUIT_IMAGES[lastRace.circuitName] || "./public/mock-circuit.png.png"} 
-              alt={lastRace.circuitName}
-              style={{ width: "100%", height: "100%", objectFit: "cover" }}
-            />
-            <Box sx={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
-            <Box sx={{ position: "absolute", bottom: 8, left: 8 }}>
-              <Typography variant="caption" color="white">Última Carrera</Typography>
-              <Typography variant="body1" color="white" fontWeight="bold" sx={{ fontFamily: "'Barlow Condensed'" }}>
-                {lastRace?.raceName || "Cargando..."}
-              </Typography>
-              <Typography variant="caption" color="white">
-                Fecha: {lastRace?.date || "-"}
-              </Typography>
-            </Box>
-          </Box>
-        </Button>
-      )}
-
-      {/* TABLA */}
-      <Box mb={2}>
+      {/* TABLA DE PRÓXIMA CARRERA */}
+      <Box mb={2} sx={{ bgcolor: "#191919", minHeight: "10vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white" }}>
         <PredictionsTable
           categories={categories}
           predictions={predictions}
           players={["Renato", "Sebastian", "Enrique"]}
           raceResults={raceResults}
+          hasOfficialResults={hasOfficialResults}
           drivers={drivers}
           currentUser={currentUser}
-          isEditing={isEditing}
+          isEditing={isEditing && currentUser !== "admin"}
           setEditedPredictions={setEditedPredictions}
           editedPredictions={editedPredictions}
           handleSavePredictions={handleSavePredictions}
-          hasOfficialResults={hasOfficialResults}
           nextRace={nextRace}
         />
 
