@@ -1,8 +1,10 @@
 import React from "react";
 import { Box, Button, Typography } from "@mui/material";
 import { PLAYERS } from "../data/players";
+import { useUser } from "../context/UserContext";
 
-export default function LoginForm({ onSelectPlayer }) {
+export default function LoginForm() {
+  const { selectUser } = useUser(); // <-- lo sacas directamente del contexto
   const players = Object.keys(PLAYERS); // ["Renato", "Sebastian", "Enrique"]
 
   return (
@@ -31,7 +33,7 @@ export default function LoginForm({ onSelectPlayer }) {
           key={player}
           variant="contained"
           color="primary"
-          onClick={() => onSelectPlayer(player)}
+          onClick={() => selectUser({ name: player, isAdmin: player === "Renato" })}
           fullWidth
           sx={{
             mb: 1.5,

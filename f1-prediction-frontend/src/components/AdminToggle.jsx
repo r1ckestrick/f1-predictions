@@ -1,5 +1,6 @@
 import { Switch, FormControlLabel } from "@mui/material";
 
+
 export default function AdminToggle({ isAdmin, isEditing, setIsEditing }) {
   if (!isAdmin) return null;
 

@@ -9,7 +9,7 @@ export default function LastRaceCard({ race }) {
     <Box
       mb={3}
       sx={{
-        height: 180,
+        height: 150,
         borderRadius: 2,
         backgroundImage: `url(${raceImage})`,
         backgroundSize: "cover",

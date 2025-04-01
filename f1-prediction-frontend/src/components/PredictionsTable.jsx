@@ -14,7 +14,7 @@ import {
 export default function PredictionsTable({
   categories, players, predictions, raceResults,
   drivers, currentUser, isEditing, setEditedPredictions,
-  editedPredictions, handleSavePredictions, hasOfficialResults, nextRace, isAdmin,
+  editedPredictions, handleSavePredictions, hasOfficialResults, nextRace,
 }) {
   const bonusKeys = ["udimpo", "podium", "hatTrick", "bullseye", "omen"];
   const visibleCategories = Object.keys(categories).filter(key => !bonusKeys.includes(key));
@@ -158,10 +158,15 @@ export default function PredictionsTable({
               {players.map((player, i) => {
                 const prediction = predictions.find(p => p.user.toLowerCase() === player.toLowerCase());
                 const value = prediction?.[key] || "";
+
+                console.log("🟣 currentUser", currentUser);
+                console.log("🟣 player", player);
+                
                 const isArrayResult = Array.isArray(safeResults[key]);
                 const isHit = safeResults[key] && (isArrayResult ? safeResults[key]?.includes(value) : safeResults[key] === value);
                 const cellColor = !safeResults[key] ? "#374151" : isHit ? "#15803d" : value ? "#b91c1c" : "#374151";
                 return (
+                  
                   <TableCell key={player} sx={{
                     bgcolor: cellColor,
                     color: "white",
@@ -184,7 +189,8 @@ export default function PredictionsTable({
                       }
                     })
                   }}>
-                      {(isAdmin || currentUser?.name === player) && isEditing ? (
+                {isEditing && (currentUser?.isAdmin || currentUser?.name === player) ? (
+                        
                       <select
                         value={editedPredictions[player]?.[key] ?? value}
                         onChange={e => setEditedPredictions(prev => ({ ...prev, [player]: { ...prev[player], [key]: e.target.value } }))}
@@ -195,6 +201,7 @@ export default function PredictionsTable({
                           borderRadius: "4px",
                           width: "100%",
                           fontSize: "0.75rem"
+                          
                         }}
                       >
                         <option value="">-</option>

@@ -6,6 +6,7 @@ import "@fontsource/barlow-condensed";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 
+
 // ✅ COMPONENTES
 import BottomNavBar from "../components/BottomNavBar";
 import Podium from "components/Podium";
@@ -157,7 +158,7 @@ useEffect(() => {
           hasOfficialResults={hasOfficialResults}
           drivers={drivers}
           currentUser={currentUser}
-          isEditing={isEditing && currentUser !== "admin"}
+          isEditing={isEditing && currentUser?.name !== "admin"}
           setEditedPredictions={setEditedPredictions}
           editedPredictions={editedPredictions}
           handleSavePredictions={handleSavePredictions}
@@ -166,12 +167,23 @@ useEffect(() => {
 
         {currentUser && (
           <Box mt={2} textAlign="center">
-            {!isEditing ? (
-              <Button variant="outlined" color="primary" onClick={() => setIsEditing(true)}>
+           {!isEditing ? (
+              <Button variant="outlined" color="primary" onClick={() => {
+                const initialEdits = {};
+                predictions.forEach(p => {
+                  initialEdits[p.user] = { ...p };
+                });
+                console.log("✅ editedPredictions inicial:", initialEdits);
+                setEditedPredictions(initialEdits);
+                setIsEditing(true);
+              }}>
                 Editar Predicciones
               </Button>
             ) : (
-              <Button variant="contained" color="success" onClick={handleSavePredictions}>
+              <Button variant="contained" color="success" onClick={() => {
+                handleSavePredictions();
+                setIsEditing(false); // <- IMPORTANTE cerrar edición después de guardar
+              }}>
                 Guardar Predicciones
               </Button>
             )}

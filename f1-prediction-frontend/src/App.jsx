@@ -10,17 +10,16 @@ import MenuSidebar from "./components/MenuSidebar";
 import { Box } from "@mui/material";
 import API_URL from "./config";
 import useRaceData from "./hooks/useRaceData";
-import useCurrentUser from "./hooks/useCurrentUser"
 import LoginForm from "./components/LoginForm";
+import { useUser } from "./context/UserContext";
 
-
-  
+// ✅ APP
 export default function App() {
   const [selectedSeason, setSelectedSeason] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, login, logout } = useCurrentUser(); 
+  const { currentUser, selectUser, logout } = useUser();
 
-  // Season Actual
+  // ✅ GET SEASON
   useEffect(() => {
     fetch(`${API_URL}/get_latest_season`)
       .then((res) => res.json())
@@ -29,21 +28,21 @@ export default function App() {
       });
   }, []);
 
-  // Próxima Carrera
+  // ✅ GET NEXT RACE
   const { nextRace } = useRaceData(selectedSeason);
 
-  // Admin Mode
+  // ✅ Admin Mode
   const handleAdminMode = () => {
     alert("Admin Mode Activado");
     setSidebarOpen(false);
   };
 
-  if (!user) {
-    // ✅ Login aún no realizado
-    return <LoginForm onSelectPlayer={login} />;
+  // ✅ LOGIN
+  if (!currentUser) {
+    return <LoginForm onSelectPlayer={selectUser} />;
   }
 
-  
+  // ✅ MAIN
   return (
     <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white" }}>
       <TopNavBar nextRace={nextRace} />
@@ -56,7 +55,7 @@ export default function App() {
       </Routes>
 
       <BottomNavBar
-        user={user}
+        user={currentUser}
         onAdminMode={handleAdminMode}
         onLogout={logout}
         onMenuClick={() => setSidebarOpen(true)}
@@ -65,8 +64,8 @@ export default function App() {
       <MenuSidebar
         open={sidebarOpen}
         onClose={() => setSidebarOpen(false)}
-        user={user}
-        isAdmin={user?.isAdmin}
+        user={currentUser}
+        isAdmin={currentUser?.isAdmin}
         onAdminMode={handleAdminMode}
         onLogout={logout}
       />

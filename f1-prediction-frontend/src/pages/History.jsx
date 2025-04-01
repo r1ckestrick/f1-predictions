@@ -1,4 +1,3 @@
-// ✅ IMPORTACIONES
 import { useState, useEffect } from "react";
 import * as React from "react";
 import API_URL from "config.js";
@@ -8,10 +7,7 @@ import { useUser } from "../context/UserContext";
 import useRaceResults from "../hooks/useRaceResults";
 import { Box, Button } from "@mui/material";
 
-
-
-
-// ✅ COMPONENTES
+// COMPONENTES
 import BottomNavBar from "../components/BottomNavBar";
 import PredictionsTable from "../components/PredictionsTable";
 import RaceCard from "../components/RaceCard";
@@ -19,10 +15,8 @@ import SeasonSelector from "../components/SeasonSelector";
 import RaceSelector from "../components/RaceSelector";
 import AdminToggle from "../components/AdminToggle";
 
-
 export default function History() {
   const { currentUser } = useUser();
-  const isAdmin = currentUser?.isAdmin;
   const [searchParams] = useSearchParams();
   const [predictions, setPredictions] = useState([]);
   const [drivers, setDrivers] = useState([]);
@@ -41,14 +35,14 @@ export default function History() {
     best_of_the_rest: "BOR", midfield_master: "MFM"
   };
 
-  // ✅ CARGA SEASONS
+  // ✅ LOAD SEASONS
   useEffect(() => {
     fetch(`${API_URL}/get_all_seasons`)
       .then((res) => res.json())
       .then((data) => setSeasons(data.seasons || []));
   }, []);
 
-  // ✅ CARGA RACES
+  // ✅ LOAD RACES
   useEffect(() => {
     if (!selectedSeason) return;
     fetch(`${API_URL}/get_all_races/${selectedSeason}`)
@@ -56,15 +50,15 @@ export default function History() {
       .then((data) => setRaces(data.races || []));
   }, [selectedSeason]);
 
-// ✅ CARGA INFO DE LA CARRERA
-useEffect(() => {
-  if (!selectedSeason || !selectedRound) return;
-  fetch(`${API_URL}/get_race_info/${selectedSeason}/${selectedRound}`)
-    .then((res) => res.json())
-    .then((data) => setRaceInfo(data));
-}, [selectedSeason, selectedRound]);
+  // ✅ LOAD RACE INFO
+  useEffect(() => {
+    if (!selectedSeason || !selectedRound) return;
+    fetch(`${API_URL}/get_race_info/${selectedSeason}/${selectedRound}`)
+      .then((res) => res.json())
+      .then((data) => setRaceInfo(data));
+  }, [selectedSeason, selectedRound]);
 
-  // ✅ CARGA DRIVERS
+  // ✅ LOAD DRIVERS
   useEffect(() => {
     if (!selectedSeason) return;
     fetch(`${API_URL}/get_drivers/${selectedSeason}`)
@@ -72,7 +66,7 @@ useEffect(() => {
       .then((data) => setDrivers(data.drivers || []));
   }, [selectedSeason]);
 
-  // ✅ CARGA PREDICCIONES
+  // ✅ LOAD PREDICTIONS
   useEffect(() => {
     if (!selectedSeason || !selectedRound) return;
     fetch(`${API_URL}/get_race_predictions/${selectedSeason}/${selectedRound}`)
@@ -80,7 +74,7 @@ useEffect(() => {
       .then((data) => setPredictions(data.predictions || []));
   }, [selectedSeason, selectedRound]);
 
-  // ✅ GUARDAR PREDICCIONES
+  // ✅ SAVE PREDICTIONS
   function handleSavePredictions() {
     if (!raceInfo || !editedPredictions) return;
 
@@ -88,19 +82,19 @@ useEffect(() => {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        season: raceInfo.season,  
-        round: raceInfo.round,    
-        race: raceInfo.round,     
+        season: raceInfo.season,
+        round: raceInfo.round,
+        race: raceInfo.round,
         predictions: Object.entries(editedPredictions).map(([player, preds]) => ({
           user: player,
           ...preds
         }))
       })
     })
-    .then(res => res.json())
-    .then(data => alert(data.message || "Predicciones guardadas"))
-    .catch(() => alert("Error al guardar predicciones"));
-}
+      .then(res => res.json())
+      .then(data => alert(data.message || "Predicciones guardadas"))
+      .catch(() => alert("Error al guardar predicciones"));
+  }
 
   return (
     <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white" }}>
@@ -111,19 +105,16 @@ useEffect(() => {
         <RaceSelector races={races} selectedRace={selectedRound} setSelectedRace={setSelectedRound} />
       </Box>
 
-      {/* CARD de la carrera */}
+      {/* CARD */}
+      {raceInfo && <RaceCard race={raceInfo} />}
 
-    {raceInfo && <RaceCard race={raceInfo} />}
-
-      {/* TABLA */}
-
-
+      {/* TABLE */}
       <Box mb={2} sx={{ bgcolor: "#191919", minHeight: "10vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white" }}>
-          {isAdmin && isEditing && (
-              <Button onClick={handleSavePredictions} variant="contained" size="small" sx={{ mb: 1 }}>
-                  Guardar Cambios
-              </Button>
-          )}
+        {currentUser?.isAdmin && isEditing && (
+          <Button onClick={handleSavePredictions} variant="contained" size="small" sx={{ mb: 1 }}>
+            Guardar Cambios
+          </Button>
+        )}
         <PredictionsTable
           categories={categories}
           predictions={predictions}
@@ -133,13 +124,13 @@ useEffect(() => {
           drivers={drivers}
           currentUser={currentUser}
           isEditing={isEditing}
+          setIsEditing={setIsEditing}
           editedPredictions={editedPredictions}
           setEditedPredictions={setEditedPredictions}
-          handleSavePredictions={handleSavePredictions}
-          isAdmin={isAdmin}
-          />
+        />
       </Box>
-    <BottomNavBar />
+
+      <BottomNavBar />
     </Box>
   );
 }

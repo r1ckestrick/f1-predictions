@@ -2,7 +2,8 @@ import { BottomNavigation, BottomNavigationAction, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Home, Trophy, Archive, BarChart3, Menu } from "lucide-react";
-import MenuSidebar from "./MenuSidebar"; // ✅ cuidado con el import, revisa que la ruta sea correcta
+import MenuSidebar from "./MenuSidebar"; 
+
 
 export default function BottomNavBar({ user, onAdminMode, onChangeUser, onLogout }) {
   const navigate = useNavigate();

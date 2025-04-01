@@ -1,7 +1,10 @@
 import { Drawer, List, ListItemButton, ListItemText, Divider, Typography, IconButton, Avatar } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
+import { useUser } from "../context/UserContext";
 
-export default function MenuSidebar({ open, onClose, user, isAdmin, onAdminMode, onLogout }) {
+export default function MenuSidebar({ open, onClose, onAdminMode }) {
+  const { currentUser, logout } = useUser();
+
   return (
     <Drawer anchor="right" open={open} onClose={onClose}>
       <div style={{ width: 260, padding: 20, display: 'flex', flexDirection: 'column', height: '100%', backgroundColor: '#1c1c1e' }}>
@@ -9,13 +12,13 @@ export default function MenuSidebar({ open, onClose, user, isAdmin, onAdminMode,
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 10 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-            <Avatar src={user?.image} alt={user?.name} />
+            <Avatar src={currentUser?.image} alt={currentUser?.name} />
             <div>
               <Typography variant="h6" sx={{ fontFamily: "'Barlow Condensed'", color: 'white' }}>
-                {user?.name || "Jugador"}
+                {currentUser?.name || "Jugador"}
               </Typography>
               <Typography variant="body2" sx={{ color: "#aaa" }}>
-                {user?.points || 0} puntos
+                {currentUser?.points || 0} puntos
               </Typography>
             </div>
           </div>
@@ -29,7 +32,7 @@ export default function MenuSidebar({ open, onClose, user, isAdmin, onAdminMode,
         {/* Opciones */}
         <List>
 
-          {isAdmin && (
+          {currentUser?.isAdmin && (
             <ListItemButton onClick={onAdminMode}>
               <ListItemText 
                 primary="Admin Mode" 
@@ -38,7 +41,7 @@ export default function MenuSidebar({ open, onClose, user, isAdmin, onAdminMode,
             </ListItemButton>
           )}
 
-          <ListItemButton onClick={onLogout}>
+          <ListItemButton onClick={logout}>
             <ListItemText 
               primary="Cerrar sesión" 
               slotProps={{ primary: { sx: { fontFamily: "'Barlow Condensed'", color: 'white' } } }} 
