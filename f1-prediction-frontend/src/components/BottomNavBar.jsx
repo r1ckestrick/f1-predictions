@@ -2,62 +2,80 @@ import { BottomNavigation, BottomNavigationAction, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { Home, Trophy, Archive, BarChart3, Menu } from "lucide-react";
+import MenuSidebar from "./MenuSidebar"; // ✅ cuidado con el import, revisa que la ruta sea correcta
 
-export default function BottomNavBar() {
+export default function BottomNavBar({ user, onAdminMode, onChangeUser, onLogout }) {
   const navigate = useNavigate();
   const [value, setValue] = useState(() => {
     const path = window.location.pathname;
     if (path.includes("stats")) return "stats";
     if (path.includes("leaderboard")) return "leaderboard";
     if (path.includes("history")) return "history";
-    if (path.includes("menu")) return "menu";
     return "home";
   });
 
+  const [menuOpen, setMenuOpen] = useState(false); // ✅ bien declarado
+
   const handleChange = (_, newValue) => {
-    setValue(newValue);
-    navigate(newValue === "home" ? "/" : `/${newValue}`);
+    if (newValue === "menu") {
+      setMenuOpen(true); // ✅ abre el drawer
+    } else {
+      setValue(newValue);
+      navigate(newValue === "home" ? "/" : `/${newValue}`);
+    }
   };
 
   return (
-    <Paper
-      sx={{
-        position: "fixed",
-        bottom: 0,
-        left: 0,
-        right: 0,
-        bgcolor: "#1c1c1e",
-        borderTop: "1px solid #333",
-        boxShadow: "0 -2px 6px rgba(0,0,0,0.5)",
-        backdropFilter: "blur(4px)",
-        zIndex: 99,
-        borderRadius: "0px",
-        mx: "0px",
-        mb: "00px",
-      }}
-      elevation={8}
-    >
-      <BottomNavigation
-        value={value}
-        onChange={handleChange}
-        showLabels={false}
+    <>
+      <Paper
         sx={{
-          bgcolor: "transparent",
-          height: "50px",
-          px: 1,
+          position: "fixed",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          bgcolor: "#1c1c1e",
+          borderTop: "1px solid #333",
+          boxShadow: "0 -2px 6px rgba(0,0,0,0.5)",
+          backdropFilter: "blur(4px)",
+          zIndex: 99,
+          borderRadius: "0px",
+          mx: "0px",
+          mb: "00px",
         }}
+        elevation={8}
       >
-        <BottomNavigationAction value="stats" icon={<BarChart3 size={20} />} sx={navItemStyle(value === "stats")} />
-        <BottomNavigationAction value="leaderboard" icon={<Trophy size={20} />} sx={navItemStyle(value === "leaderboard")} />
-        <BottomNavigationAction value="home" icon={<Home size={20} />} sx={navItemStyle(value === "home")} />
-        <BottomNavigationAction value="history" icon={<Archive size={20} />} sx={navItemStyle(value === "history")} />
-        <BottomNavigationAction value="menu" icon={<Menu size={20} />} sx={navItemStyle(value === "menu")} />
-      </BottomNavigation>
-    </Paper>
+        <BottomNavigation
+          value={value}
+          onChange={handleChange}
+          showLabels={false}
+          sx={{
+            bgcolor: "transparent",
+            height: "50px",
+            px: 1,
+            paddingBottom: "20px",
+          }}
+        >
+          <BottomNavigationAction value="stats" icon={<BarChart3 size={20} />} sx={navItemStyle(value === "stats")} />
+          <BottomNavigationAction value="leaderboard" icon={<Trophy size={20} />} sx={navItemStyle(value === "leaderboard")} />
+          <BottomNavigationAction value="home" icon={<Home size={20} />} sx={navItemStyle(value === "home")} />
+          <BottomNavigationAction value="history" icon={<Archive size={20} />} sx={navItemStyle(value === "history")} />
+          <BottomNavigationAction value="menu" icon={<Menu size={20} />} sx={navItemStyle(false)} />
+        </BottomNavigation>
+      </Paper>
+
+      <MenuSidebar
+        open={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        user={user}
+        isAdmin={user?.isAdmin}
+        onAdminMode={onAdminMode}
+        onChangeUser={onChangeUser}
+        onLogout={onLogout}
+      />
+    </>
   );
 }
 
-// ✅ Estilo limpio, moderno y pro
 function navItemStyle(selected) {
   return {
     color: selected ? "white" : "#999",
@@ -76,8 +94,8 @@ function navItemStyle(selected) {
       transition: "all 0.3s ease",
     },
     "&:hover": {
-      transform: "translateY(-2px)", // levanta un poco
-      backgroundColor: "transparent", // sin fondo sucio
+      transform: "translateY(-2px)",
+      backgroundColor: "transparent",
     },
   };
 }

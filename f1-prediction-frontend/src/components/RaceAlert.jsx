@@ -61,8 +61,8 @@ export default function RaceAlert({ race: raceData }) {
       sx={{
         bgcolor: `${color}.800` || "#1c1c1e",
         border: `1px solid ${color}`,
-        borderRadius: 2,
-        p: 2,
+        borderRadius: 3.5,
+        p: 0.7,
         mb: 2,
         textAlign: "center",
         boxShadow: "0 0 8px rgba(255,255,255,0.1)",

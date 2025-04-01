@@ -119,9 +119,6 @@ useEffect(() => {
 
 
       <Box mb={2} sx={{ bgcolor: "#191919", minHeight: "10vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white" }}>
-      {isAdmin && (
-            <AdminToggle isAdmin={isAdmin} isEditing={isEditing} setIsEditing={setIsEditing} />
-          )}
           {isAdmin && isEditing && (
               <Button onClick={handleSavePredictions} variant="contained" size="small" sx={{ mb: 1 }}>
                   Guardar Cambios

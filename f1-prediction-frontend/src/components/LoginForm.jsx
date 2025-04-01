@@ -1,10 +1,10 @@
 import React from "react";
 import { Box, Button, Typography } from "@mui/material";
-
-const players = ["Renato", "Sebastian", "Enrique"];
-const admins = ["Renato"]; 
+import { PLAYERS } from "../data/players";
 
 export default function LoginForm({ onSelectPlayer }) {
+  const players = Object.keys(PLAYERS); // ["Renato", "Sebastian", "Enrique"]
+
   return (
     <Box
       textAlign="center"
@@ -31,7 +31,7 @@ export default function LoginForm({ onSelectPlayer }) {
           key={player}
           variant="contained"
           color="primary"
-          onClick={() => onSelectPlayer({ name: player, isAdmin: admins.includes(player) })}
+          onClick={() => onSelectPlayer(player)}
           fullWidth
           sx={{
             mb: 1.5,

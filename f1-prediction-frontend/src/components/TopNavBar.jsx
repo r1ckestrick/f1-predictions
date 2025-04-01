@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Box, Button } from "@mui/material";
-import f1Logo from "../assets/images/logo512.png";
+import f1Logo from "../assets/images/pplogo.png";
 
 export default function TopNavBar({ nextRace }) {
   const navigate = useNavigate();
@@ -59,7 +59,7 @@ export default function TopNavBar({ nextRace }) {
 
       <Button
         size="medium"
-        variant="outlined"
+       
         sx={{
           borderRadius: "20px",
           textTransform: "none",
