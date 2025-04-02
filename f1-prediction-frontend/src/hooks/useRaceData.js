@@ -11,6 +11,7 @@ export default function useRaceData(season) {
   useEffect(() => {
     if (!season) return;
 
+    // Cargar carreras
     fetch(`${API_URL}/get_all_races/${season}`)
       .then((res) => res.json())
       .then((data) => {
@@ -18,7 +19,6 @@ export default function useRaceData(season) {
         setRaces(allRaces);
 
         const today = new Date();
-
         const pastRaces = allRaces.filter(r => new Date(r.date + "T12:00:00") <= today);
         const futureRaces = allRaces.filter(r => new Date(r.date + "T12:00:00") > today);
 
@@ -52,11 +52,13 @@ export default function useRaceData(season) {
         }
       });
 
+    // Cargar drivers
     fetch(`${API_URL}/get_drivers/${season}`)
       .then((res) => res.json())
       .then((data) => setDrivers(data.drivers || []));
 
-    fetch(`${API_URL}/leaderboard`)
+    // Cargar leaderboard de la temporada
+    fetch(`${API_URL}/leaderboard/${season}`)
       .then((res) => res.json())
       .then((data) => setLeaderboard(data));
 

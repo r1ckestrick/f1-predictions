@@ -59,7 +59,8 @@ useEffect(() => {
 
           const [driversRes, leaderboardRes] = await Promise.all([
               fetch(`${API_URL}/get_drivers/${seasonRes.latest_season}`).then(r => r.json()),
-              fetch(`${API_URL}/leaderboard`).then(r => r.json())
+              fetch(`${API_URL}/leaderboard/${selectedSeason}`)
+              .then(r => r.json())
           ]);
 
           setDrivers(driversRes.drivers || []);
@@ -89,7 +90,7 @@ useEffect(() => {
       loadAll();
   }
 
-}, [setLoading, nextRace]);
+}, [setLoading, nextRace, selectedSeason]);
 
   // ✅ LOAD PREDICTIONS
   const loadPredictions = useCallback(() => {

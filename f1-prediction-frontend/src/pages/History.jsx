@@ -24,6 +24,8 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
   const [seasons, setSeasons] = useState([]);
   const [races, setRaces] = useState([]);
   const [raceInfo, setRaceInfo] = useState(null);
+  const [raceResults, setRaceResults] = useState(null);
+  const [hasOfficialResults, setHasOfficialResults] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [editedPredictions, setEditedPredictions] = useState({});
   const [selectedSeason, setSelectedSeason] = useState(parseInt(searchParams.get("season")) || 2025);
@@ -34,7 +36,6 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
     dnf: "DNF", positions_gained: "POG", positions_lost: "POL",
     best_of_the_rest: "BOR", midfield_master: "MFM"
   };
-
 
   // ✅ CARGA INICIAL COMPLETA
   useEffect(() => {
@@ -55,6 +56,12 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
         setRaceInfo(raceInfoRes);
         setPredictions(predictionsRes.predictions || []);
 
+        // ✅ CARGAR RESULTADOS OFICIALES
+        const resultsRes = await fetch(`${API_URL}/get_race_results/${selectedSeason}/${selectedRound}`);
+        const resultsData = resultsRes.status === 404 ? null : await resultsRes.json();
+        setRaceResults(resultsData || null);
+        setHasOfficialResults(!!resultsData?.p1);
+
       } catch (err) {
         console.error("Error cargando datos de History", err);
       } finally {
@@ -64,7 +71,13 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
     loadAll();
   }, [selectedSeason, selectedRound, setLoading]);
 
-  // ✅ SAVE PREDICTIONS
+  // ✅ RECARGAR SOLO PREDICCIONES
+  async function reloadPredictions() {
+    const predictionsRes = await fetch(`${API_URL}/get_race_predictions/${selectedSeason}/${selectedRound}`).then(r => r.json());
+    setPredictions(predictionsRes.predictions || []);
+  }
+
+  // ✅ SAVE PREDICTIONS SOLO PARA ADMIN
   function handleSavePredictions() {
     if (!raceInfo || !editedPredictions) return;
     setLoading(true);
@@ -81,6 +94,7 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
     })
       .then(res => res.json())
       .then(() => {
+        reloadPredictions();
         setShowSavedMessage("✅ Predicciones guardadas");
         setTimeout(() => setShowSavedMessage(""), 2000);
         setIsEditing(false);
@@ -102,11 +116,6 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
       {raceInfo && <RaceCard race={raceInfo} />}
 
       {/* TABLE */}
-      {currentUser?.isAdmin && isEditing && (
-        <Button onClick={handleSavePredictions} variant="contained" size="small" sx={{ mb: 1 }}>
-          Guardar Cambios
-        </Button>
-      )}
       <PredictionsTable
         categories={categories}
         predictions={predictions}
@@ -117,8 +126,31 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
         setIsEditing={setIsEditing}
         editedPredictions={editedPredictions}
         setEditedPredictions={setEditedPredictions}
+        raceResults={raceResults}
+        hasOfficialResults={hasOfficialResults}
       />
 
+      {/* SOLO ADMIN VE BOTONES */}
+      {currentUser?.isAdmin && (
+        <Box mt={2} textAlign="center">
+          {!isEditing ? (
+            <Button variant="outlined" color="primary" onClick={() => {
+              const initialEdits = {};
+              predictions.forEach(p => { initialEdits[p.user] = { ...p }; });
+              setEditedPredictions(initialEdits);
+              setIsEditing(true);
+            }}>
+              Editar Predicciones
+            </Button>
+          ) : (
+            <Button variant="contained" color="success" onClick={handleSavePredictions}>
+              Guardar Predicciones
+            </Button>
+          )}
+        </Box>
+      )}
+
+      {/* SNACKBAR */}
       {showSavedMessage && (
         <Box sx={{ bgcolor: "#22c55e", color: "white", p: 1, borderRadius: 1, textAlign: "center", mb: 2 }}>
           ✅ Predicciones guardadas

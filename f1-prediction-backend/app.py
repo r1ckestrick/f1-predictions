@@ -211,18 +211,18 @@ def calculate_points(prediction, race_results):
         
    # Debugger
     force_print(f"🔵 Jugador: {prediction.user.name if hasattr(prediction, 'user') and prediction.user else prediction.user_id}")
-    force_print("🎯 Aciertos normales:", correct_picks, "/10")
-    force_print("💎 Bonos:")
-    force_print("   - Bullseye:", "✅" if bullseye else "❌")
-    force_print("   - Hat-Trick:", "✅" if hat_trick else "❌")
-    force_print("   - UdImPo:", "✅" if udimpo else "❌")
-    force_print("   - Podium exacto:", "✅" if podium else "❌")
-    force_print("   - OMEN:", "✅" if omen else "❌")
-    force_print("➕ Base Points:", participation_points)
-    force_print("➕ Puntos por aciertos:", base_points)
-    force_print("💰 Puntos antes de multiplicador:", participation_points + base_points)
-    force_print("✖️ Multiplicador aplicado:", multiplier)
-    force_print("🎁 OMEN Bonus:", omen_bonus)
+    #force_print("🎯 Aciertos normales:", correct_picks, "/10")
+    #force_print("💎 Bonos:")
+    #force_print("   - Bullseye:", "✅" if bullseye else "❌")
+    #force_print("   - Hat-Trick:", "✅" if hat_trick else "❌")
+    #force_print("   - UdImPo:", "✅" if udimpo else "❌")
+    #force_print("   - Podium exacto:", "✅" if podium else "❌")
+    #force_print("   - OMEN:", "✅" if omen else "❌")
+    #force_print("➕ Base Points:", participation_points)
+    #force_print("➕ Puntos por aciertos:", base_points)
+    #force_print("💰 Puntos antes de multiplicador:", participation_points + base_points)
+    #force_print("✖️ Multiplicador aplicado:", multiplier)
+    #force_print("🎁 OMEN Bonus:", omen_bonus)
     force_print("🏁 Total Calculado:", total)
 
 
@@ -526,7 +526,20 @@ def get_race_predictions(season, round):
 
     return jsonify({"predictions": predictions_list})
 
-
+#leaderboard por season
+@app.route('/leaderboard/<int:season>', methods=['GET'])
+def leaderboard_by_season(season):
+    users = User.query.all()
+    ranking = []
+    for user in users:
+        total_points = db.session.query(db.func.sum(Prediction.points)).filter(
+            Prediction.user_id == user.id,
+            Prediction.season == season
+        ).scalar()
+        ranking.append({"name": user.name, "total_points": total_points or 0})  # Evita valores nulos
+    
+    ranking = sorted(ranking, key=lambda x: x["total_points"], reverse=True)
+    return jsonify(ranking)
 
 
 # Información de la carrera 
@@ -608,6 +621,8 @@ def recalculate_points_for_race(season, round):
     except Exception as e:
         db.session.rollback()
         return jsonify({"error": f"Error al guardar puntos recalculados: {str(e)}"}), 500
+    
+    
       
 
 #-------------------------FIN MODELOS DE BASE DE DATOS-------------------------#

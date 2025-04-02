@@ -1,6 +1,7 @@
 import { Drawer, List, ListItemButton, ListItemText, Divider, Typography, IconButton, Avatar } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { useUser } from "../context/UserContext";
+import AdminToggle from "./AdminToggle";
 
 export default function MenuSidebar({ open, onClose, onAdminMode }) {
   const { currentUser, logout } = useUser();
@@ -34,6 +35,7 @@ export default function MenuSidebar({ open, onClose, onAdminMode }) {
 
           {currentUser?.isAdmin && (
             <ListItemButton onClick={onAdminMode}>
+              <AdminToggle/>
               <ListItemText 
                 primary="Admin Mode" 
                 slotProps={{ primary: { sx: { fontFamily: "'Barlow Condensed'", color: 'white' } } }} 
