@@ -273,10 +273,6 @@ def get_race_results_internal(season, round):
 def save_predictions():
 
     data = request.json
-    print("=== PRODUCTION LOG ===")
-    print("Payload recibido:", data)
-    print("Predictions es tipo:", type(data.get("predictions")))
-    print("=====================")
     user_name = data.get("user")
     race = int(data.get("race") or data.get("round") or 0) or None  # ✅ acepta race o round
     season = int(data.get("season")) if data.get("season") else None

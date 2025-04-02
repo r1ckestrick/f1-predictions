@@ -159,8 +159,6 @@ export default function PredictionsTable({
                 const prediction = predictions.find(p => p.user.toLowerCase() === player.toLowerCase());
                 const value = prediction?.[key] || "";
 
-                console.log("🟣 currentUser", currentUser);
-                console.log("🟣 player", player);
                 
                 const isArrayResult = Array.isArray(safeResults[key]);
                 const isHit = safeResults[key] && (isArrayResult ? safeResults[key]?.includes(value) : safeResults[key] === value);

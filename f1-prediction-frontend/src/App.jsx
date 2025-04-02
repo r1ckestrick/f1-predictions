@@ -1,5 +1,9 @@
 import { useState, useEffect } from "react";
 import { Routes, Route } from "react-router-dom";
+import { LoaderProvider } from "./context/LoaderContext";
+import { useUser } from "./context/UserContext";
+import { Box } from "@mui/material";
+
 import Home from "./pages/Home";
 import History from "./pages/History";
 import Stats from "./pages/Stats";
@@ -7,17 +11,21 @@ import Leaderboard from "./pages/Leaderboard";
 import TopNavBar from "./components/TopNavBar";
 import BottomNavBar from "./components/BottomNavBar";
 import MenuSidebar from "./components/MenuSidebar";
-import { Box } from "@mui/material";
 import API_URL from "./config";
 import useRaceData from "./hooks/useRaceData";
 import LoginForm from "./components/LoginForm";
-import { useUser } from "./context/UserContext";
+import LoadingOverlay from "./components/LoadingOverlay";
+
 
 // ✅ APP
 export default function App() {
   const [selectedSeason, setSelectedSeason] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { currentUser, selectUser, logout } = useUser();
+  const [showSavedMessage, setShowSavedMessage] = useState(""); 
+
+  
+  
 
   // ✅ GET SEASON
   useEffect(() => {
@@ -44,31 +52,44 @@ export default function App() {
 
   // ✅ MAIN
   return (
-    <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white" }}>
-      <TopNavBar nextRace={nextRace} />
-
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/history" element={<History />} />
-        <Route path="/stats" element={<Stats />} />
-        <Route path="/leaderboard" element={<Leaderboard />} />
-      </Routes>
-
-      <BottomNavBar
-        user={currentUser}
-        onAdminMode={handleAdminMode}
-        onLogout={logout}
-        onMenuClick={() => setSidebarOpen(true)}
-      />
-
-      <MenuSidebar
-        open={sidebarOpen}
-        onClose={() => setSidebarOpen(false)}
-        user={currentUser}
-        isAdmin={currentUser?.isAdmin}
-        onAdminMode={handleAdminMode}
-        onLogout={logout}
-      />
-    </Box>
+    <LoaderProvider>
+      <Box         
+      
+      sx={{
+          backgroundColor: "#0f0f0f", // Change this to your desired background color
+          minHeight: "100vh", // Ensures the background covers the full viewport height
+          display: "flex",
+          flexDirection: "column",
+          pt: 3,
+          pb: 3,       
+        }}
+      >
+      
+        <TopNavBar nextRace={nextRace} savedMessage={showSavedMessage} />
+        <LoadingOverlay />
+        <Routes>
+          <Route path="/" element={<Home setShowSavedMessage={setShowSavedMessage} />} />
+          <Route path="/history" element={<History setShowSavedMessage={setShowSavedMessage} />} />
+          <Route path="/stats" element={<Stats setShowSavedMessage={setShowSavedMessage} />} />
+          <Route path="/leaderboard" element={<Leaderboard setShowSavedMessage={setShowSavedMessage} />} />
+        </Routes>
+        
+        <BottomNavBar
+          user={currentUser}
+          onAdminMode={handleAdminMode}
+          onLogout={logout}
+          onMenuClick={() => setSidebarOpen(true)}
+        />
+        <MenuSidebar
+          open={sidebarOpen}
+          onClose={() => setSidebarOpen(false)}
+          user={currentUser}
+          isAdmin={currentUser?.isAdmin}
+          onAdminMode={handleAdminMode}
+          onLogout={logout}
+        />
+        
+      </Box>
+    </LoaderProvider>
   );
 }
