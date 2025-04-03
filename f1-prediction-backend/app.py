@@ -577,12 +577,13 @@ class User(db.Model):
     predictions = db.relationship('Prediction', backref='user', lazy=True)  # Relación con Prediction
 
 # Pre-carga de usuarios si no existen
-with app.app_context():
-    if not User.query.first():
-        db.session.add(User(name="Renato"))
-        db.session.add(User(name="Sebastian"))
-        db.session.add(User(name="Enrique"))
-        db.session.commit()
+if __name__ == "__main__":
+    with app.app_context():
+        if not User.query.first():
+            db.session.add(User(name="Renato"))
+            db.session.add(User(name="Sebastian"))
+            db.session.add(User(name="Enrique"))
+            db.session.commit()
         force_print("✅ Usuarios base creados")
 
 @app.route('/recalculate_points/<int:season>/<int:round>', methods=['POST'])
