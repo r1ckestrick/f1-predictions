@@ -1,15 +1,22 @@
-import { Box, Typography } from "@mui/material";
+import { Box, Typography, Avatar, Paper } from "@mui/material";
+import { PLAYERS } from "../data/players";
 import { RACE_IMAGES } from "../data/raceImages";
 
-export default function LastRaceCard({ race }) {
+export default function LastRaceCard({ race, winner }) {
   if (!race) return null;
 
   const raceImage = RACE_IMAGES[race.raceName] || "/mock-silverstone.jpeg";
+  const playerData = PLAYERS[winner?.user] || {};
+  const { name, image } = playerData;
+
+  // Texto dummy solo para los aciertos
+  const guessText = "Ver Predicciones";
+
   return (
     <Box
       mb={3}
       sx={{
-        height: 150,
+        height: 130,
         borderRadius: 2,
         backgroundImage: `url(${raceImage})`,
         backgroundSize: "cover",
@@ -20,10 +27,74 @@ export default function LastRaceCard({ race }) {
       }}
     >
       <Box sx={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
-      <Box sx={{ position: "absolute", bottom: 8, left: 8 }}>
-        <Typography variant="caption" color="white">Última Carrera</Typography>
-        <Typography variant="body1" color="white" fontWeight="bold">{race?.raceName || "Sin nombre"}</Typography>
-        <Typography variant="caption" color="white">Ganador: {race?.Results?.[0]?.Driver?.familyName || "-"}</Typography>
+
+      <Box
+        sx={{
+          position: "absolute",
+          bottom: 8,
+          left: 8,
+          right: 8,
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "space-between",
+        }}
+      >
+        {/* Left - Info carrera */}
+        <Box>
+          <Typography variant="caption" color="white">Última Carrera</Typography>
+          <Typography variant="body1" color="white" fontWeight="bold">
+            {race?.raceName || "Sin nombre"}
+          </Typography>
+          <Typography variant="caption" color="white">
+            {guessText}
+          </Typography>
+        </Box>
+
+        {/* Right - Avatar + Puntos */}
+        {winner && (
+          <Box display="flex" flexDirection="column" alignItems="center" gap={0.3}>
+            <Typography
+              variant="body2"
+              sx={{
+                color: "#ffcc00",
+                fontSize: "1.3rem",
+                textShadow: "0 0 3px rgba(0,0,0,0.6)",
+              }}
+            >
+              🏁
+            </Typography>
+
+            <Avatar
+              src={image}
+              alt={name}
+              sx={{
+                width: 40,
+                height: 40,
+                border: "2px solid #ff4655",
+                boxShadow: "0 0 8px rgba(255, 70, 85, 0.8)",
+                transition: "all 0.3s ease",
+              }}
+            />
+
+            <Paper
+              component="div"
+              sx={{
+                borderRadius: "5px",
+                bgcolor: "#ff4655",
+                px: 0.5,
+                py: 0.5,
+                minWidth: "45px",
+                textAlign: "center",
+                mt: 0.3,
+                cursor: "pointer",
+              }}
+            >
+              <Typography variant="body2" fontWeight="bold" color="#ffffff">
+                {winner.points ?? 0} pts
+              </Typography>
+            </Paper>
+          </Box>
+        )}
       </Box>
     </Box>
   );

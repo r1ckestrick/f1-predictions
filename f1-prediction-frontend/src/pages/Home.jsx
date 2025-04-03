@@ -7,6 +7,8 @@ import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext"; 
 import { useLoader } from "../context/LoaderContext";
 import { Box, Button } from "@mui/material";
+import { getWinner } from "../utils/getWinner";
+
 
 // ✅ COMPONENTES
 import BottomNavBar from "../components/BottomNavBar";
@@ -15,6 +17,7 @@ import PredictionsTable from "components/PredictionsTable";
 import LoginForm from "components/LoginForm";
 import LastRaceCard from "../components/LastRaceCard";
 import useRaceData from "../hooks/useRaceData";
+
 
 // ✅ HOME
 export default function Home({ setShowSavedMessage }) {
@@ -30,6 +33,8 @@ export default function Home({ setShowSavedMessage }) {
   const [raceResults, setRaceResults] = useState({});
   const [hasOfficialResults, setHasOfficialResults] = useState(false);
   const { setLoading } = useLoader();
+  const [lastRacePredictions, setLastRacePredictions] = useState([]);
+
 
   // ✅ CATEGORIES
   const categories = {
@@ -104,6 +109,15 @@ useEffect(() => {
     if (isDataLoaded) loadPredictions();
   }, [isDataLoaded, loadPredictions]);
 
+//
+useEffect(() => {
+  if (!lastRace) return;
+  fetch(`${API_URL}/get_race_predictions/${selectedSeason}/${lastRace.round}`)
+    .then(res => res.json())
+    .then(data => setLastRacePredictions(data.predictions || []));
+}, [lastRace, selectedSeason]);
+
+
   // ✅ LOAD RESULTS
   useEffect(() => {
     if (!nextRace || !nextRace.round) return;
@@ -157,13 +171,21 @@ useEffect(() => {
     })
     .finally(() => setLoading(false));
   }
+  
+  // ✅ Obtener predicciones solo de la última carrera
+
+// ✅ Calcular el ganador de la última carrera
+const lastRaceWinner = getWinner(lastRacePredictions);
 
   // ✅ UI PRINCIPAL
   return (
     <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "100%", mx: "auto", color: "white", pt: 4, pb: 9 }}>
         <Podium ranking={leaderboard} />
         <Box mb={3} />
-        {lastRace && <LastRaceCard race={lastRace} onClick={() => navigate(`/history?season=${selectedSeason}&round=${lastRace.round}`)} />}
+        {lastRace &&  <LastRaceCard
+                        race={lastRace}
+                        winner={lastRaceWinner}
+                        onClick={() => navigate(`/history?season=${selectedSeason}&round=${lastRace.round}`)} />}
 
         <PredictionsTable
             categories={categories}
@@ -189,11 +211,11 @@ useEffect(() => {
                 setEditedPredictions(initialEdits);
                 setIsEditing(true);
               }}>
-                Editar Predicciones
+                Predecir
               </Button>
             ) : (
-              <Button variant="contained" color="success" onClick={handleSavePredictions}>
-                Guardar Predicciones
+              <Button variant="contained" color="#ff4655" onClick={handleSavePredictions}>
+                Guardar
               </Button>
             )}
           </Box>

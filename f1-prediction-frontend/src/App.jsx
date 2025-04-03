@@ -3,7 +3,8 @@ import { Routes, Route } from "react-router-dom";
 import { LoaderProvider } from "./context/LoaderContext";
 import { useUser } from "./context/UserContext";
 import { Box } from "@mui/material";
-
+import { ThemeProvider } from '@mui/material/styles';
+import '@fontsource/gidole'
 import Home from "./pages/Home";
 import History from "./pages/History";
 import Stats from "./pages/Stats";
@@ -15,17 +16,14 @@ import API_URL from "./config";
 import useRaceData from "./hooks/useRaceData";
 import LoginForm from "./components/LoginForm";
 import LoadingOverlay from "./components/LoadingOverlay";
-
+import theme from './theme';
 
 // ✅ APP
 export default function App() {
   const [selectedSeason, setSelectedSeason] = useState(null);
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { currentUser, selectUser, logout } = useUser();
-  const [showSavedMessage, setShowSavedMessage] = useState(""); 
-
-  
-  
+  const [showSavedMessage, setShowSavedMessage] = useState("");
 
   // ✅ GET SEASON
   useEffect(() => {
@@ -45,51 +43,56 @@ export default function App() {
     setSidebarOpen(false);
   };
 
-  // ✅ LOGIN
-  if (!currentUser) {
-    return <LoginForm onSelectPlayer={selectUser} />;
-  }
-
-  // ✅ MAIN
   return (
-    <LoaderProvider>
-      <Box         
-      
-      sx={{
-          backgroundColor: "#0f0f0f", // Change this to your desired background color
-          minHeight: "100vh", // Ensures the background covers the full viewport height
-          display: "flex",
-          flexDirection: "column",
-          pt: 3,
-          pb: 3,       
-        }}
-      >
-      
-        <TopNavBar nextRace={nextRace} savedMessage={showSavedMessage} />
-        <LoadingOverlay />
-        <Routes>
-          <Route path="/" element={<Home setShowSavedMessage={setShowSavedMessage} />} />
-          <Route path="/history" element={<History setShowSavedMessage={setShowSavedMessage} />} />
-          <Route path="/stats" element={<Stats setShowSavedMessage={setShowSavedMessage} />} />
-          <Route path="/leaderboard" element={<Leaderboard setShowSavedMessage={setShowSavedMessage} />} />
-        </Routes>
-        
-        <BottomNavBar
-          user={currentUser}
-          onAdminMode={handleAdminMode}
-          onLogout={logout}
-          onMenuClick={() => setSidebarOpen(true)}
-        />
-        <MenuSidebar
-          open={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          user={currentUser}
-          isAdmin={currentUser?.isAdmin}
-          onAdminMode={handleAdminMode}
-          onLogout={logout}
-        />
-        
-      </Box>
-    </LoaderProvider>
+    <ThemeProvider theme={theme}>
+      <LoaderProvider>
+        {!currentUser ? (
+          <Box sx={{
+            bgcolor: "background.default",
+            minHeight: "100vh",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            p: 2
+          }}>
+            <LoginForm onSelectPlayer={selectUser} />
+          </Box>
+        ) : (
+          <Box
+            sx={{
+              backgroundColor: "#0f0f0f",
+              minHeight: "100vh",
+              display: "flex",
+              flexDirection: "column",
+              pt: 3,
+              pb: 3,
+            }}
+          >
+            <TopNavBar nextRace={nextRace} savedMessage={showSavedMessage} />
+            <LoadingOverlay />
+            <Routes>
+              <Route path="/" element={<Home setShowSavedMessage={setShowSavedMessage} />} />
+              <Route path="/history" element={<History setShowSavedMessage={setShowSavedMessage} />} />
+              <Route path="/stats" element={<Stats setShowSavedMessage={setShowSavedMessage} />} />
+              <Route path="/leaderboard" element={<Leaderboard setShowSavedMessage={setShowSavedMessage} />} />
+            </Routes>
+            <BottomNavBar
+              user={currentUser}
+              onAdminMode={handleAdminMode}
+              onLogout={logout}
+              onMenuClick={() => setSidebarOpen(true)}
+            />
+            <MenuSidebar
+              open={sidebarOpen}
+              onClose={() => setSidebarOpen(false)}
+              user={currentUser}
+              isAdmin={currentUser?.isAdmin}
+              onAdminMode={handleAdminMode}
+              onLogout={logout}
+            />
+          </Box>
+        )}
+      </LoaderProvider>
+    </ThemeProvider>
   );
 }

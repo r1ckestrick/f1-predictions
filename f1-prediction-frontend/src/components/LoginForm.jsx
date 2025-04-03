@@ -4,8 +4,8 @@ import { PLAYERS } from "../data/players";
 import { useUser } from "../context/UserContext";
 
 export default function LoginForm() {
-  const { selectUser } = useUser(); // <-- lo sacas directamente del contexto
-  const players = Object.keys(PLAYERS); // ["Renato", "Sebastian", "Enrique"]
+  const { selectUser } = useUser();
+  const players = Object.keys(PLAYERS);
 
   return (
     <Box
@@ -13,9 +13,9 @@ export default function LoginForm() {
       mt={10}
       p={4}
       sx={{
-        bgcolor: "#1c1c1e",
-        borderRadius: 3,
-        boxShadow: "0 0 10px rgba(255,255,255,0.05)",
+        bgcolor: "background.paper",
+        borderRadius: 4,
+        boxShadow: "0 0 12px rgba(0,0,0,0.3)",
         maxWidth: 400,
         mx: "auto",
       }}
@@ -23,7 +23,7 @@ export default function LoginForm() {
       <Typography
         variant="h6"
         mb={3}
-        sx={{ fontFamily: "'Barlow Condensed'", color: "white" }}
+        sx={{ fontFamily: "'Barlow Condensed'", color: "text.primary" }}
       >
         ¿Quién eres?
       </Typography>
@@ -40,6 +40,13 @@ export default function LoginForm() {
             fontFamily: "'Barlow Condensed'",
             fontWeight: "bold",
             textTransform: "none",
+            borderRadius: 2,
+            boxShadow: "0 0 4px rgba(0,0,0,0.2)",
+            "&:hover": {
+              boxShadow: "0 0 8px rgba(255,70,85,0.5)",
+              transform: "scale(1.02)",
+            },
+            transition: "all 0.2s ease",
           }}
         >
           {player}

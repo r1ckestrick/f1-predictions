@@ -7,6 +7,7 @@ import { useSearchParams } from "react-router-dom";
 import { useUser } from "../context/UserContext";
 import { useLoader } from "../context/LoaderContext";
 import { Box, Button } from "@mui/material";
+import { getWinner } from "../utils/getWinner"; // <-- nuevo helper
 
 // ✅ COMPONENTES
 import BottomNavBar from "../components/BottomNavBar";
@@ -31,11 +32,18 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
   const [selectedSeason, setSelectedSeason] = useState(parseInt(searchParams.get("season")) || 2025);
   const [selectedRound, setSelectedRound] = useState(parseInt(searchParams.get("round")) || 1);
 
+
+  const winner = predictions.length > 0 ? getWinner(predictions) : null;
+  console.log("Predictions:", predictions);
+  console.log("Winner:", winner);
+
   const categories = {
     pole: "POLE", p1: "P1", p2: "P2", p3: "P3", fastest_lap: "FL",
     dnf: "DNF", positions_gained: "POG", positions_lost: "POL",
     best_of_the_rest: "BOR", midfield_master: "MFM"
   };
+
+  
 
   // ✅ CARGA INICIAL COMPLETA
   useEffect(() => {
@@ -102,7 +110,7 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
       .catch(() => alert("Error al guardar predicciones"))
       .finally(() => setLoading(false));
   }
-
+  
   return (
     <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white", pt: 4, pb: 9 }}>
 
@@ -113,7 +121,7 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
       </Box>
 
       {/* CARD */}
-      {raceInfo && <RaceCard race={raceInfo} />}
+      {raceInfo && <RaceCard race={raceInfo} winner={winner} />}
 
       {/* TABLE */}
       <PredictionsTable
