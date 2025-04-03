@@ -2,6 +2,9 @@ from app import db, Prediction, app
 
 # Asegura que estamos en el contexto de la aplicación
 with app.app_context():
+    # ✅ Crear tablas si no existen
+    db.create_all()
+    
     try:
         print("🔄 Cerrando conexiones y eliminando predicciones...")
 
@@ -21,3 +24,4 @@ with app.app_context():
     except Exception as e:
         db.session.rollback()
         print(f"❌ Error al eliminar predicciones: {e}")
+
