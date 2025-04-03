@@ -21,7 +21,7 @@ app = Flask(__name__)
 CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configurar base de datos
-app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL", "sqlite:///f1_predictions.db")
+app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL") or os.getenv("DATABASE_PUBLIC_URL")
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
