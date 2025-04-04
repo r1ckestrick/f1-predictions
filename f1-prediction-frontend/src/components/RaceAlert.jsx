@@ -54,7 +54,7 @@ export default function RaceAlert({ race: raceData }) {
       sx={{
         bgcolor: `#ff4655` || "#1c1c1e",
         border: `1px solid #ff4655`,
-        borderRadius: 5,
+        borderRadius: 3,
         px: 1,
         py: 0.3,
         mb: 1,

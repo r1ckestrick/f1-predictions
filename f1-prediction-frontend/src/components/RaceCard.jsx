@@ -6,9 +6,10 @@ import { RACE_IMAGES } from "../data/raceImages";
 export default function RaceCard({ race, winner }) {
   if (!race) return null;
 
-  const raceImage = RACE_IMAGES[race.raceName] || "/mock-silverstone.jpeg";
+  const raceAssets = RACE_IMAGES[race.raceName] || {};
+  const raceImage = raceAssets.background || "/mock-silverstone.jpeg";
+  const circuitOverlay = raceAssets.circuit || null;
 
-  // Info del ganador (puedes ajustarlo)
   const playerData = PLAYERS[winner?.user] || {};
   const { name, image } = playerData;
 
@@ -51,68 +52,71 @@ export default function RaceCard({ race, winner }) {
           </Typography>
         </Box>
 
- {/* Right - Ganador */}
-{winner && (
-  <Box display="flex" flexDirection="column" alignItems="center" gap={0.3}>
-    
-    {/* 🏁 Bandera con sombra */}
-    <Typography
-      variant="body2"
-      sx={{
-        color: "#ffcc00",
-        fontSize: "1.3rem",
-        textShadow: "0 0 3px rgba(0,0,0,0.6)",
-      }}
-    >
-      🏁
-    </Typography>
-
-    {/* Avatar con glow */}
-    <Avatar
-      src={image}
-      alt={name}
-      sx={{
-        width: 40,
-        height: 40,
-        border: "2px solid #ff4655",
-        boxShadow: "0 0 8px rgba(255, 70, 85, 0.8)",
-        transition: "all 0.3s ease",
-        "&:hover": {
-          boxShadow: "0 0 12px rgba(255, 70, 85, 1)",
-          transform: "scale(1.05)",
-        }
-      }}
-    />
-
-    {/* Badge Rojo con hover visible */}
-    <Paper
-      component="div" // 👈 forza comportamiento de div
-      sx={{
-        borderRadius: "5px",
-        bgcolor: "#ff4655",
-        px: 0.5,
-        py: 0.5,
-        minWidth: "45px",
-        textAlign: "center",
-        mt: 0.3,
-        transition: "all 0.3s ease",
-        cursor: "pointer",
-        marginBottom: 1,
-        "&:hover": {
-          boxShadow: "0 0 6px rgba(255,70,85,0.7)",
-          transform: "scale(1.04)",
-        },
-      }}
-    >
-      <Typography variant="body2" fontWeight="bold" color="#ffffff">
-        {winner.points ?? 0} pts
-      </Typography>
-    </Paper>
-  </Box>
-)}
-
-
-
+        {/* Right - Ganador o Circuito */}
+        <Box display="flex" flexDirection="column" alignItems="center" gap={0.3}>
+          {winner ? (
+            <>
+              <Typography
+                variant="body2"
+                sx={{
+                  color: "#ffcc00",
+                  fontSize: "1.3rem",
+                  textShadow: "0 0 3px rgba(0,0,0,0.6)",
+                }}
+              >
+                🏁
+              </Typography>
+              <Avatar
+                src={image}
+                alt={name}
+                sx={{
+                  width: 40,
+                  height: 40,
+                  border: "2px solid #ff4655",
+                  boxShadow: "0 0 8px rgba(255, 70, 85, 0.8)",
+                  transition: "all 0.3s ease",
+                  "&:hover": {
+                    boxShadow: "0 0 12px rgba(255, 70, 85, 1)",
+                    transform: "scale(1.05)",
+                  }
+                }}
+              />
+              <Paper
+                component="div"
+                sx={{
+                  borderRadius: "5px",
+                  bgcolor: "#ff4655",
+                  px: 0.5,
+                  py: 0.5,
+                  minWidth: "45px",
+                  textAlign: "center",
+                  mt: 0.3,
+                  transition: "all 0.3s ease",
+                  cursor: "pointer",
+                  marginBottom: 1,
+                  "&:hover": {
+                    boxShadow: "0 0 6px rgba(255,70,85,0.7)",
+                    transform: "scale(1.04)",
+                  },
+                }}
+              >
+                <Typography variant="body2" fontWeight="bold" color="#ffffff">
+                  {winner.points ?? 0} pts
+                </Typography>
+              </Paper>
+            </>
+          ) : circuitOverlay ? (
+            <img
+              src={circuitOverlay}
+              alt="Circuit"
+              style={{
+                height: 90,
+                opacity: 0.85,
+                filter: "drop-shadow(0 0 3px black)",
+              }}
+            />
+          ) : null}
+        </Box>
       </Box>
     </Box>
   );

@@ -71,9 +71,9 @@ export default function App() {
             <TopNavBar nextRace={nextRace} savedMessage={showSavedMessage} />
             <LoadingOverlay />
             <Routes>
-              <Route path="/" element={<Home setShowSavedMessage={setShowSavedMessage} />} />
+              <Route path="/" element={<Stats setShowSavedMessage={setShowSavedMessage} />} />
               <Route path="/history" element={<History setShowSavedMessage={setShowSavedMessage} />} />
-              <Route path="/stats" element={<Stats setShowSavedMessage={setShowSavedMessage} />} />
+              <Route path="/stats" element={<Home setShowSavedMessage={setShowSavedMessage} />} />
               <Route path="/leaderboard" element={<Leaderboard setShowSavedMessage={setShowSavedMessage} />} />
             </Routes>
             <BottomNavBar

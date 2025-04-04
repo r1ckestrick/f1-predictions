@@ -1,75 +1,91 @@
 import * as React from "react";
-import { Box, Typography, Card, CardContent, Button, Avatar } from "@mui/material";
+import { Box, Typography, Card, Avatar, Divider } from "@mui/material";
 import BottomNavBar from "../components/BottomNavBar";
+import ExtendedNextRaceCard from "../components/ExtendedNextRaceCard";
+
+import avatarImg from "../assets/images/tato.jpg";
+import emblem1 from "../assets/images/emblem1.png";
 
 export default function Stats() {
   return (
-    <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white", pt: 4, pb: 9 }}>
+    <Box
+      sx={{
+        position: "fixed",
+        bgcolor: "#0f0f0f",
+        minHeight: "100vh",
+        px: 2,
+        py: 3,
+        maxWidth: "1000px",
+        mx: "auto",
+        color: "white",
+        pt: 4,
+        pb: 9,
+      }}
+    >
+     
 
-      {/* Perfil del Jugador */}
-      <Card sx={{ bgcolor: "#191919", mb: 2, borderRadius: 3, p: 2 }}>
+      {/* 🔹 PERFIL COMPLETO DEL JUGADOR */}
+      <Card
+        sx={{
+          marginTop: 5,
+          mb: 3,
+          borderRadius: 4,
+          background: "linear-gradient(180deg, #1a1a1a, #0f0f0f)",
+          boxShadow: "0 0 20px rgba(255,255,255,0.05)",
+          p: 3,
+        }}
+      >
         <Box display="flex" alignItems="center" gap={2}>
-          <Avatar sx={{ width: 64, height: 64 }} src="https://via.placeholder.com/100" />
+          <Avatar
+            sx={{ width: 72, height: 72, border: "2px solid #fff" }}
+            src={avatarImg}
+          />
           <Box>
-            <Typography variant="h5" fontWeight="bold">Renato</Typography>
-            <Typography variant="body2" color="text.secondary">Puesto 1º | 1234 pts</Typography>
-            <Typography variant="body2">Bonos: 🏆 🎯 🔮</Typography>
+            <Typography variant="h5" fontWeight="bold">
+              Renato
+            </Typography>
+            <Box display="flex" alignItems="center" gap={1}>
+              <img src={emblem1} alt="rango" style={{ width: 24 }} />
+              <Typography variant="body2" color="text.secondary">
+                Rango: Elite Predictor
+              </Typography>
+            </Box>
+            <Typography variant="body2">Puesto 1º | 1234 pts</Typography>
+            <Typography variant="body2">
+              Bonos: 🎩 x2 🎯 x4 🔮 x1
+            </Typography>
           </Box>
         </Box>
-      </Card>
 
-      {/* Noticias */}
-      <Card sx={{ bgcolor: "#191919", mb: 2, borderRadius: 3 }}>
-        <CardContent>
-          <Typography variant="h6" sx={{ mb: 1 }}>📰 Noticias</Typography>
-          <Box sx={{ display: "flex", gap: 2 }}>
-            <Avatar variant="rounded" src="https://via.placeholder.com/100x60" sx={{ width: 100, height: 60 }} />
-            <Box>
-              <Typography variant="body2" fontWeight="bold">Verstappen se queja de la pista</Typography>
-              <Typography variant="caption">Hace 2 horas</Typography>
-            </Box>
+        <Divider sx={{ my: 2, borderColor: "#333" }} />
+
+        <Box display="flex" justifyContent="space-around">
+          <Box textAlign="center">
+            <Typography variant="caption" color="text.secondary">
+              Predicciones
+            </Typography>
+            <Typography variant="h6">45</Typography>
           </Box>
-        </CardContent>
-      </Card>
-
-      {/* Estadísticas personales */}
-      <Card sx={{ bgcolor: "#1f1f1f", mb: 2, borderRadius: 3 }}>
-        <CardContent>
-          <Typography variant="h6">📊 Stats Personales</Typography>
-          <Box display="flex" justifyContent="space-between" mt={2}>
-            <Box>
-              <Typography variant="body2">Puntaje</Typography>
-              <Typography variant="h5">1234 pts</Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2">Mejor resultado</Typography>
-              <Typography variant="h5">🏆 1º lugar</Typography>
-            </Box>
-            <Box>
-              <Typography variant="body2">Bonos</Typography>
-              <Typography variant="h5">🎯 x3</Typography>
-            </Box>
+          <Box textAlign="center">
+            <Typography variant="caption" color="text.secondary">
+              Aciertos
+            </Typography>
+            <Typography variant="h6">31</Typography>
           </Box>
-        </CardContent>
+          <Box textAlign="center">
+            <Typography variant="caption" color="text.secondary">
+              Accuracy
+            </Typography>
+            <Typography variant="h6">68%</Typography>
+          </Box>
+        </Box>
+
+        <Divider sx={{ my: 2, borderColor: "#333" }} />
+
       </Card>
 
-      {/* Historial y logros */}
-      <Card sx={{ bgcolor: "#1f1f1f", mb: 2, borderRadius: 3 }}>
-        <CardContent>
-          <Typography variant="h6">🏅 Logros</Typography>
-          <Typography variant="body2" mt={1}>🏆 Hat Trick Leader</Typography>
-          <Typography variant="body2">🎯 Más Bullseyes</Typography>
-          <Typography variant="body2">🔮 Mejor Omen</Typography>
-          <Typography variant="body2">🧠 Mejor Udimpo</Typography>
-        </CardContent>
-      </Card>
-
-      {/* Botón */}
-      <Box textAlign="center" mt={2}>
-        <Button variant="contained" color="primary" size="large" sx={{ borderRadius: "20px" }}>
-          Ir a Predecir 🚦
-        </Button>
-      </Box>
+      {/* 🔹 PRÓXIMA CARRERA EXTENDIDA */}
+      <ExtendedNextRaceCard />
 
       <BottomNavBar />
     </Box>

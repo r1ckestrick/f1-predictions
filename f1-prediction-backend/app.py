@@ -142,13 +142,34 @@ def is_hit(pred_value, result_value):
         return pred_value in result_value
     return pred_value == result_value
 
+def has_valid_predictions(prediction):
+    fields = [
+        prediction.pole,
+        prediction.p1,
+        prediction.p2,
+        prediction.p3,
+        prediction.positions_gained,
+        prediction.positions_lost,
+        prediction.fastest_lap,
+        prediction.dnf,
+        prediction.best_of_the_rest,
+        prediction.midfield_master
+    ]
+
+    return any(
+        str(field).strip().upper() not in ["", "-", "NONE"]
+        for field in fields
+    )
+
+
 
 def calculate_points(prediction, race_results):
     if not prediction or not race_results:
+       
         return {"points": 0, "bullseye": False, "hatTrick": False, "udimpo": False, "podium": False, "omen": False}
 
     # Puntos base por participar
-    participation_points = 100
+    participation_points = 100 if has_valid_predictions(prediction) else 0
 
     # Calculamos los aciertos
     correct_picks = sum([
@@ -210,30 +231,23 @@ def calculate_points(prediction, race_results):
     total = min(max(total, 0), 1000)
         
    # Debugger
-    force_print(f"🔵 Jugador: {prediction.user.name if hasattr(prediction, 'user') and prediction.user else prediction.user_id}")
-    #force_print("🎯 Aciertos normales:", correct_picks, "/10")
-    #force_print("💎 Bonos:")
-    #force_print("   - Bullseye:", "✅" if bullseye else "❌")
-    #force_print("   - Hat-Trick:", "✅" if hat_trick else "❌")
-    #force_print("   - UdImPo:", "✅" if udimpo else "❌")
-    #force_print("   - Podium exacto:", "✅" if podium else "❌")
-    #force_print("   - OMEN:", "✅" if omen else "❌")
-    #force_print("➕ Base Points:", participation_points)
-    #force_print("➕ Puntos por aciertos:", base_points)
-    #force_print("💰 Puntos antes de multiplicador:", participation_points + base_points)
-    #force_print("✖️ Multiplicador aplicado:", multiplier)
-    #force_print("🎁 OMEN Bonus:", omen_bonus)
-    force_print("🏁 Total Calculado:", total)
+    if os.getenv("ENV") != "production":
+        force_print(
+            f"🧠 {prediction.user.name if hasattr(prediction, 'user') and prediction.user else prediction.user_id} → "
+            f"Valid: {has_valid_predictions(prediction)} | "
+            f"Hits: {correct_picks}/10 | "
+            f"Total: {total} pts"
+        )
 
 
-    return {
-        "points": total,
-        "bullseye": bullseye,
-        "hatTrick": hat_trick,
-        "udimpo": udimpo,
-        "podium": podium,
-        "omen": omen
-    }
+        return {
+            "points": total,
+            "bullseye": bullseye,
+            "hatTrick": hat_trick,
+            "udimpo": udimpo,
+            "podium": podium,
+            "omen": omen
+        }
 
 #-------------------------FIN CÁLCULO DE PUNTOS-------------------------#
 #-------------------------SISTEMA DE PREDICCIONES-------------------------#
@@ -563,8 +577,13 @@ def get_race_info(season, round):
                 "date": race.get("date", "Fecha no disponible"),
                 "circuitName": circuit.get("circuitName", "Circuito Desconocido"),
                 "location": f"{circuit.get('Location', {}).get('locality', 'Ubicación no disponible')}, {circuit.get('Location', {}).get('country', 'País no disponible')}",
-                "map": f"http://en.wikipedia.org/wiki/{circuit.get('circuitName', '').replace(' ', '_')}",
-                "mapImage": f"https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/{circuit.get('circuitName', '').replace(' ', '_')}--Grand_Prix_Layout.svg/800px-{circuit.get('circuitName', '').replace(' ', '_')}--Grand_Prix_Layout.svg.png"
+                "FirstPractice": race.get("FirstPractice"),
+                "SecondPractice": race.get("SecondPractice"),
+                "ThirdPractice": race.get("ThirdPractice"),
+                "Qualifying": race.get("Qualifying"),
+                "Sprint": race.get("Sprint"),
+                "SprintQualifying": race.get("SprintQualifying"),
+                "time": race.get("time"),
             }
             return jsonify(race_info)
 

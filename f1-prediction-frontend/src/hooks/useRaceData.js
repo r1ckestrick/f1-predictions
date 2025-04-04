@@ -44,9 +44,8 @@ export default function useRaceData(season) {
             .then((details) => setNextRace({
               season,
               ...next,
-              results: details.results,
-              has_official_results: details.has_official_results
-            }));
+              ...details  // 👈 Aquí metes todos los campos devueltos por get_race_info
+            }));           
         } else {
           setNextRace(null);
         }

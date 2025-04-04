@@ -1,7 +1,7 @@
 import { BottomNavigation, BottomNavigationAction, Paper } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { useState } from "react";
-import { Home, Trophy, Archive, BarChart3, Menu } from "lucide-react";
+import { Home, Trophy, Archive, Goal, Menu } from "lucide-react";
 import MenuSidebar from "./MenuSidebar"; 
 
 
@@ -56,9 +56,9 @@ export default function BottomNavBar({ user, onAdminMode, onChangeUser, onLogout
             paddingBottom: "20px",
           }}
         >
-          <BottomNavigationAction value="stats" icon={<BarChart3 size={20} />} sx={navItemStyle(value === "stats")} />
-          <BottomNavigationAction value="leaderboard" icon={<Trophy size={20} />} sx={navItemStyle(value === "leaderboard")} />
           <BottomNavigationAction value="home" icon={<Home size={20} />} sx={navItemStyle(value === "home")} />
+          <BottomNavigationAction value="leaderboard" icon={<Trophy size={20} />} sx={navItemStyle(value === "leaderboard")} />
+          <BottomNavigationAction value="stats" icon={<Goal size={20} />} sx={navItemStyle(value === "stats")} />
           <BottomNavigationAction value="history" icon={<Archive size={20} />} sx={navItemStyle(value === "history")} />
           <BottomNavigationAction value="menu" icon={<Menu size={20} />} sx={navItemStyle(false)} />
         </BottomNavigation>

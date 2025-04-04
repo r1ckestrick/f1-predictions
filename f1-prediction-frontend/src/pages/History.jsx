@@ -34,9 +34,8 @@ export default function History({ setShowSavedMessage, showSavedMessage }) {
 
 
   const winner = predictions.length > 0 ? getWinner(predictions) : null;
-  console.log("Predictions:", predictions);
-  console.log("Winner:", winner);
 
+  
   const categories = {
     pole: "POLE", p1: "P1", p2: "P2", p3: "P3", fastest_lap: "FL",
     dnf: "DNF", positions_gained: "POG", positions_lost: "POL",

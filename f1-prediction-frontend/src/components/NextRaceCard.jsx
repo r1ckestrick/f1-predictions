@@ -2,10 +2,14 @@ import { Box, Typography } from "@mui/material";
 import { RACE_IMAGES } from "../data/raceImages";
 import RaceAlert from "./RaceAlert"; // <-- recuerda importarlo bien
 
+const fallbackImage = "/mock-silverstone.jpeg";
+
 export default function NextRaceCard({ race }) {
   if (!race) return null;
 
-  const raceImage = RACE_IMAGES[race.raceName] || "/mock-silverstone.jpeg";
+  const raceAssets = RACE_IMAGES[race.raceName] || {};
+  const backgroundImage = raceAssets.background || fallbackImage;
+  const circuitOverlay = raceAssets.circuit || null;
 
   return (
     <Box
@@ -13,7 +17,7 @@ export default function NextRaceCard({ race }) {
       sx={{
         height: 130,
         borderRadius: 2,
-        backgroundImage: `url(${raceImage})`,
+        backgroundImage: `url(${backgroundImage})`,
         backgroundSize: "cover",
         backgroundPosition: "center",
         position: "relative",
@@ -25,8 +29,10 @@ export default function NextRaceCard({ race }) {
         },
       }}
     >
+      {/* Overlay oscuro */}
       <Box sx={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
 
+      {/* Contenido */}
       <Box
         sx={{
           position: "absolute",
@@ -40,9 +46,7 @@ export default function NextRaceCard({ race }) {
       >
         {/* Left - Info carrera */}
         <Box>
-          {/* 🟣 RaceAlert bien arriba */}
           <Box mb={1}>{race && <RaceAlert race={race} />}</Box>
-
           <Typography variant="caption" color="white">Próxima Carrera</Typography>
           <Typography variant="body1" color="white" fontWeight="bold">
             {race?.raceName || "Sin nombre"}
@@ -51,6 +55,21 @@ export default function NextRaceCard({ race }) {
             Fecha: {race?.date || "-"}
           </Typography>
         </Box>
+
+        {/* Right - Circuit overlay */}
+        {circuitOverlay && (
+          <Box>
+            <img
+              src={circuitOverlay}
+              alt=""
+              style={{
+                height: 90,
+                opacity: 0.85,
+                filter: "drop-shadow(0 0 3px black)",
+              }}
+            />
+          </Box>
+        )}
       </Box>
     </Box>
   );

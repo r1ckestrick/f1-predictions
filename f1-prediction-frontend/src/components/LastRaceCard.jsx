@@ -5,7 +5,8 @@ import { RACE_IMAGES } from "../data/raceImages";
 export default function LastRaceCard({ race, winner }) {
   if (!race) return null;
 
-  const raceImage = RACE_IMAGES[race.raceName] || "/mock-silverstone.jpeg";
+  const raceAssets = RACE_IMAGES[race.raceName] || {};
+  const raceImage = raceAssets.background || "/mock-silverstone.jpeg";
   const playerData = PLAYERS[winner?.user] || {};
   const { name, image } = playerData;
 
