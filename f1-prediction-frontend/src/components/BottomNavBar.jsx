@@ -1,25 +1,32 @@
-import { BottomNavigation, BottomNavigationAction, Paper } from "@mui/material";
+import { BottomNavigation, BottomNavigationAction, Paper, Snackbar, Alert } from "@mui/material";
 import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Home, Trophy, Archive, Goal, Menu } from "lucide-react";
 import MenuSidebar from "./MenuSidebar"; 
 
-
 export default function BottomNavBar({ user, onAdminMode, onChangeUser, onLogout }) {
   const navigate = useNavigate();
-  const [value, setValue] = useState(() => {
-    const path = window.location.pathname;
-    if (path.includes("stats")) return "stats";
-    if (path.includes("leaderboard")) return "leaderboard";
-    if (path.includes("history")) return "history";
-    return "home";
-  });
+  const [value, setValue] = useState("home");
+  const [menuOpen, setMenuOpen] = useState(false);
 
-  const [menuOpen, setMenuOpen] = useState(false); // ✅ bien declarado
+  const [snackbarOpen, setSnackbarOpen] = useState(false);
+
+  useEffect(() => {
+    const path = window.location.pathname;
+    if (path.includes("stats")) setValue("stats");
+    else if (path.includes("leaderboard")) setValue("leaderboard");
+    else if (path.includes("history")) setValue("history");
+    else setValue("home");
+  }, []);
 
   const handleChange = (_, newValue) => {
+    if (["home", "leaderboard"].includes(newValue)) {
+      setSnackbarOpen(true); // 🔔 Mostrar aviso
+      return;
+    }
+
     if (newValue === "menu") {
-      setMenuOpen(true); // ✅ abre el drawer
+      setMenuOpen(true);
     } else {
       setValue(newValue);
       navigate(newValue === "home" ? "/" : `/${newValue}`);
@@ -39,9 +46,6 @@ export default function BottomNavBar({ user, onAdminMode, onChangeUser, onLogout
           boxShadow: "0 -2px 6px rgba(0,0,0,0.5)",
           backdropFilter: "blur(4px)",
           zIndex: 99,
-          borderRadius: "0px",
-          mx: "0px",
-          mb: "00px",
         }}
         elevation={8}
       >
@@ -73,6 +77,12 @@ export default function BottomNavBar({ user, onAdminMode, onChangeUser, onLogout
         onChangeUser={onChangeUser}
         onLogout={onLogout}
       />
+
+      <Snackbar open={snackbarOpen} autoHideDuration={2000} onClose={() => setSnackbarOpen(false)} anchorOrigin={{ vertical: "top", horizontal: "center" }}>
+        <Alert severity="info" sx={{ width: '100%' }}>
+          🚧 Sección disponible pronto
+        </Alert>
+      </Snackbar>
     </>
   );
 }

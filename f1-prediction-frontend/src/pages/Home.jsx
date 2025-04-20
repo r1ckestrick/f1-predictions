@@ -8,7 +8,7 @@ import { useUser } from "../context/UserContext";
 import { useLoader } from "../context/LoaderContext";
 import { Box, Button } from "@mui/material";
 import { getWinner } from "../utils/getWinner";
-
+import dayjs from "dayjs";
 
 // ✅ COMPONENTES
 import BottomNavBar from "../components/BottomNavBar";
@@ -17,7 +17,6 @@ import PredictionsTable from "components/PredictionsTable";
 import LoginForm from "components/LoginForm";
 import LastRaceCard from "../components/LastRaceCard";
 import useRaceData from "../hooks/useRaceData";
-
 
 // ✅ HOME
 export default function Home({ setShowSavedMessage }) {
@@ -35,6 +34,11 @@ export default function Home({ setShowSavedMessage }) {
   const { setLoading } = useLoader();
   const [lastRacePredictions, setLastRacePredictions] = useState([]);
 
+  const qualyDatetime = nextRace?.Qualifying?.date && nextRace?.Qualifying?.time
+    ? dayjs(`${nextRace.Qualifying.date}T${nextRace.Qualifying.time}`)
+    : null;
+
+  const isPredictionClosed = qualyDatetime ? dayjs().isAfter(qualyDatetime) : false;
 
   // ✅ CATEGORIES
   const categories = {
@@ -50,54 +54,49 @@ export default function Home({ setShowSavedMessage }) {
     midfield_master: "MFM"
   };
 
-  // ✅ LOADER CONTROL
   const [isDataLoaded, setIsDataLoaded] = useState(false);
 
- // ✅ CARGA INICIAL CON PREDICTIONS Y RESULTS
-useEffect(() => {
-  setLoading(true);
-  async function loadAll() {
+  useEffect(() => {
+    setLoading(true);
+    async function loadAll() {
       setLoading(true);
       try {
-          const seasonRes = await fetch(`${API_URL}/get_latest_season`).then(r => r.json());
-          if (seasonRes.latest_season) setSelectedSeason(parseInt(seasonRes.latest_season));
+        const seasonRes = await fetch(`${API_URL}/get_latest_season`).then(r => r.json());
+        if (seasonRes.latest_season) setSelectedSeason(parseInt(seasonRes.latest_season));
 
-          const [driversRes, leaderboardRes] = await Promise.all([
-              fetch(`${API_URL}/get_drivers/${seasonRes.latest_season}`).then(r => r.json()),
-              fetch(`${API_URL}/leaderboard/${selectedSeason}`)
-              .then(r => r.json())
+        const [driversRes, leaderboardRes] = await Promise.all([
+          fetch(`${API_URL}/get_drivers/${seasonRes.latest_season}`).then(r => r.json()),
+          fetch(`${API_URL}/leaderboard/${selectedSeason}`).then(r => r.json())
+        ]);
+
+        setDrivers(driversRes.drivers || []);
+        setLeaderboard(leaderboardRes);
+
+        if (nextRace) {
+          const [predictionsRes, resultsRes] = await Promise.all([
+            fetch(`${API_URL}/get_race_predictions/${seasonRes.latest_season}/${nextRace.round}`).then(r => r.json()),
+            fetch(`${API_URL}/get_race_results/${seasonRes.latest_season}/${nextRace.round}`).then(r => r.status === 404 ? null : r.json())
           ]);
 
-          setDrivers(driversRes.drivers || []);
-          setLeaderboard(leaderboardRes);
-
-          // solo cargar predicciones y resultados si hay nextRace
-          if (nextRace) {
-              const [predictionsRes, resultsRes] = await Promise.all([
-                  fetch(`${API_URL}/get_race_predictions/${seasonRes.latest_season}/${nextRace.round}`).then(r => r.json()),
-                  fetch(`${API_URL}/get_race_results/${seasonRes.latest_season}/${nextRace.round}`).then(r => r.status === 404 ? null : r.json())
-              ]);
-
-              setPredictions(predictionsRes.predictions || []);
-              setRaceResults(resultsRes || null);
-              setHasOfficialResults(!!resultsRes?.p1);
-          }
+          setPredictions(predictionsRes.predictions || []);
+          setRaceResults(resultsRes || null);
+          setHasOfficialResults(!!resultsRes?.p1);
+        }
 
       } catch (err) {
-          console.error("Error cargando datos", err);
+        console.error("Error cargando datos", err);
       } finally {
-          setIsDataLoaded(true);
-          setLoading(false);
+        setIsDataLoaded(true);
+        setLoading(false);
       }
-  }
+    }
 
-  if (nextRace) {
+    if (nextRace) {
       loadAll();
-  }
+    }
 
-}, [setLoading, nextRace, selectedSeason]);
+  }, [setLoading, nextRace, selectedSeason]);
 
-  // ✅ LOAD PREDICTIONS
   const loadPredictions = useCallback(() => {
     if (!nextRace) return;
     fetch(`${API_URL}/get_race_predictions/${selectedSeason}/${nextRace.round}`)
@@ -109,16 +108,13 @@ useEffect(() => {
     if (isDataLoaded) loadPredictions();
   }, [isDataLoaded, loadPredictions]);
 
-//
-useEffect(() => {
-  if (!lastRace) return;
-  fetch(`${API_URL}/get_race_predictions/${selectedSeason}/${lastRace.round}`)
-    .then(res => res.json())
-    .then(data => setLastRacePredictions(data.predictions || []));
-}, [lastRace, selectedSeason]);
+  useEffect(() => {
+    if (!lastRace) return;
+    fetch(`${API_URL}/get_race_predictions/${selectedSeason}/${lastRace.round}`)
+      .then(res => res.json())
+      .then(data => setLastRacePredictions(data.predictions || []));
+  }, [lastRace, selectedSeason]);
 
-
-  // ✅ LOAD RESULTS
   useEffect(() => {
     if (!nextRace || !nextRace.round) return;
     fetch(`${API_URL}/get_race_results/${selectedSeason}/${nextRace.round}`)
@@ -133,7 +129,6 @@ useEffect(() => {
       });
   }, [nextRace, selectedSeason]);
 
-  // ✅ LOGIN
   if (!currentUser) {
     return (
       <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "1000px", mx: "auto", color: "white" }}>
@@ -142,7 +137,6 @@ useEffect(() => {
     );
   }
 
-  // ✅ GUARDAR PREDICCIONES
   function handleSavePredictions() {
     if (!nextRace || !currentUser) return;
     setLoading(true);
@@ -158,70 +152,96 @@ useEffect(() => {
         predictions: [{ user: currentUser.name, ...editedPredictions[currentUser.name] }]
       })
     })
-    .then(res => res.json())
-    .then(() => {
-      loadPredictions();
-      setShowSavedMessage("✅ Predicciones guardadas");
-      setTimeout(() => setShowSavedMessage(""), 3000);
-      setIsEditing(false);
-    })
-    .catch(() => {
-      setShowSavedMessage("❌ Error al guardar predicciones");
-      setTimeout(() => setShowSavedMessage(""), 3500);
-    })
-    .finally(() => setLoading(false));
+      .then(res => res.json())
+      .then(() => {
+        loadPredictions();
+        setShowSavedMessage("✅ Predicciones guardadas");
+        setTimeout(() => setShowSavedMessage(""), 3000);
+        setIsEditing(false);
+      })
+      .catch(() => {
+        setShowSavedMessage("❌ Error al guardar predicciones");
+        setTimeout(() => setShowSavedMessage(""), 3500);
+      })
+      .finally(() => setLoading(false));
   }
-  
-  // ✅ Obtener predicciones solo de la última carrera
 
-// ✅ Calcular el ganador de la última carrera
-const lastRaceWinner = getWinner(lastRacePredictions);
+  const lastRaceWinner = getWinner(lastRacePredictions);
 
-  // ✅ UI PRINCIPAL
   return (
     <Box sx={{ bgcolor: "#0f0f0f", minHeight: "100vh", px: 2, py: 3, maxWidth: "100%", mx: "auto", color: "white", pt: 4, pb: 9 }}>
-        <Podium ranking={leaderboard} />
-        <Box mb={3} />
-        {lastRace &&  <LastRaceCard
-                        race={lastRace}
-                        winner={lastRaceWinner}
-                        onClick={() => navigate(`/history?season=${selectedSeason}&round=${lastRace.round}`)} />}
-
-        <PredictionsTable
-            categories={categories}
-            predictions={predictions}
-            players={["Renato", "Sebastian", "Enrique"]}
-            raceResults={raceResults}
-            hasOfficialResults={hasOfficialResults}
-            drivers={drivers}
-            currentUser={currentUser}
-            isEditing={isEditing && currentUser?.name !== "admin"}
-            setEditedPredictions={setEditedPredictions}
-            editedPredictions={editedPredictions}
-            handleSavePredictions={handleSavePredictions}
-            nextRace={nextRace}
+      <Podium ranking={leaderboard} />
+      <Box mb={3} />
+      {lastRace && (
+        <LastRaceCard
+          race={lastRace}
+          winner={lastRaceWinner}
+          onClick={() => navigate(`/history?season=${selectedSeason}&round=${lastRace.round}`)}
         />
+      )}
 
-        {currentUser && (
-          <Box mt={2} textAlign="center">
-            {!isEditing ? (
-              <Button variant="outlined" color="primary" onClick={() => {
-                const initialEdits = {};
-                predictions.forEach(p => { initialEdits[p.user] = { ...p }; });
-                setEditedPredictions(initialEdits);
-                setIsEditing(true);
-              }}>
-                Predecir
-              </Button>
-            ) : (
-              <Button variant="contained" color="#ff4655" onClick={handleSavePredictions}>
+      <PredictionsTable
+        categories={categories}
+        predictions={predictions}
+        players={["Renato", "Sebastian", "Enrique"]}
+        raceResults={raceResults}
+        hasOfficialResults={hasOfficialResults}
+        drivers={drivers}
+        currentUser={currentUser}
+        isEditing={isEditing && currentUser?.name !== "admin"}
+        setEditedPredictions={setEditedPredictions}
+        editedPredictions={editedPredictions}
+        handleSavePredictions={handleSavePredictions}
+        nextRace={nextRace}
+      />
+
+      {currentUser && (
+        <Box mt={2} textAlign="center">
+          {isPredictionClosed ? (
+            <Box
+              sx={{
+                bgcolor: "#1e1e1e",
+                border: "1px solid #ff4655",
+                color: "#ff4655",
+                px: 2,
+                py: 1,
+                borderRadius: 2,
+                fontWeight: "bold",
+                display: "inline-block"
+              }}
+            >
+              🛑 Predicciones cerradas
+            </Box>
+          ) : (
+            isEditing ? (
+              <Button
+                variant="contained"
+                color="success"
+                onClick={handleSavePredictions}
+              >
                 Guardar
               </Button>
-            )}
-          </Box>
-        )}
+            ) : (
+              <Button
+                variant="outlined"
+                color="primary"
+                onClick={() => {
+                  const initialEdits = {};
+                  predictions.forEach(p => {
+                    initialEdits[p.user] = { ...p };
+                  });
+                  setEditedPredictions(initialEdits);
+                  setIsEditing(true);
+                }}
+              >
+                Predecir
+              </Button>
+            )
+          )}
+        </Box>
+      )}
 
-        <BottomNavBar />
+      <BottomNavBar />
     </Box>
   );
 }

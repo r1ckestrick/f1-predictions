@@ -1,6 +1,4 @@
-#from app import db, app
-
-# ✅ Crea las tablas
-#with app.app_context():
-  #  db.create_all()
-  # print("✅ Tablas creadas correctamente.")
+from app import db, app
+with app.app_context():
+    db.create_all()
+    print("✅ Tablas creadas correctamente (si no existían)")

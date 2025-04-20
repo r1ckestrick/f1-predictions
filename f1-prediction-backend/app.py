@@ -1,10 +1,10 @@
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
-import requests
-import os
 from dotenv import load_dotenv
 load_dotenv()
+import requests
+import os
 import sys
 
 # Define the API_URL
@@ -22,6 +22,7 @@ CORS(app, resources={r"/*": {"origins": "*"}})
 
 # Configurar base de datos
 app.config['SQLALCHEMY_DATABASE_URI'] = os.getenv("DATABASE_URL")
+print(">>>>> BASE DE DATOS USADA:", app.config["SQLALCHEMY_DATABASE_URI"])
 app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
 db = SQLAlchemy(app)
@@ -161,12 +162,16 @@ def has_valid_predictions(prediction):
         for field in fields
     )
 
-
-
 def calculate_points(prediction, race_results):
     if not prediction or not race_results:
-       
-        return {"points": 0, "bullseye": False, "hatTrick": False, "udimpo": False, "podium": False, "omen": False}
+        return {
+            "points": 0,
+            "bullseye": False,
+            "hatTrick": False,
+            "udimpo": False,
+            "podium": False,
+            "omen": False
+        }
 
     # Puntos base por participar
     participation_points = 100 if has_valid_predictions(prediction) else 0
@@ -226,28 +231,27 @@ def calculate_points(prediction, race_results):
 
     # Total calculado
     total = round((participation_points + base_points) * multiplier + omen_bonus)
-
-    # Asegurar que el total no exceda los límites
     total = min(max(total, 0), 1000)
-        
-   # Debugger
+
+    # LOG solo si estás en desarrollo
     if os.getenv("ENV") != "production":
         force_print(
             f"🧠 {prediction.user.name if hasattr(prediction, 'user') and prediction.user else prediction.user_id} → "
-            f"Valid: {has_valid_predictions(prediction)} | "
-            f"Hits: {correct_picks}/10 | "
+            f"Valid: {has_valid_predictions(prediction)} | Hits: {correct_picks}/10 | "
+            f"HAT: {hat_trick} | POD: {podium} | BULL: {bullseye} | OMEN: {omen} | UDIMPO: {udimpo} | "
             f"Total: {total} pts"
         )
 
+    # 🔁 Este return ahora se ejecuta SIEMPRE
+    return {
+        "points": total,
+        "bullseye": bullseye,
+        "hatTrick": hat_trick,
+        "udimpo": udimpo,
+        "podium": podium,
+        "omen": omen
+    }
 
-        return {
-            "points": total,
-            "bullseye": bullseye,
-            "hatTrick": hat_trick,
-            "udimpo": udimpo,
-            "podium": podium,
-            "omen": omen
-        }
 
 #-------------------------FIN CÁLCULO DE PUNTOS-------------------------#
 #-------------------------SISTEMA DE PREDICCIONES-------------------------#
@@ -389,6 +393,70 @@ def get_latest_season():
     
     return jsonify({"error": "No se pudo obtener la última temporada"}), 500
 
+@app.route('/get_all_data/<int:season>', methods=['GET'])
+def get_all_data(season):
+    from threading import Thread
+
+    # Lanzar recalculado en segundo plano
+    Thread(target=recalculate_all_points, args=(season,)).start()
+
+    # 1. Obtener última temporada oficial
+    season_url = "https://api.jolpi.ca/ergast/f1/seasons.json?limit=100"
+    season_response = requests.get(season_url)
+    latest_season = "2024"
+    if season_response.status_code == 200:
+        seasons = season_response.json().get("MRData", {}).get("SeasonTable", {}).get("Seasons", [])
+        latest_season = seasons[-1]["season"] if seasons else "2024"
+
+    # 2. Obtener pilotos
+    drivers_url = f"https://api.jolpi.ca/ergast/f1/{season}/drivers.json"
+    drivers_response = requests.get(drivers_url)
+    drivers = []
+    if drivers_response.status_code == 200:
+        for d in drivers_response.json().get("MRData", {}).get("DriverTable", {}).get("Drivers", []):
+            code = d.get("code", d["familyName"][:3].upper())
+            name = f"{d['givenName']} {d['familyName']}"
+            drivers.append({"code": code, "name": name})
+
+    # 3. Obtener carreras
+    races_url = f"https://api.jolpi.ca/ergast/f1/{season}.json"
+    races_response = requests.get(races_url)
+    race_list = races_response.json().get("MRData", {}).get("RaceTable", {}).get("Races", []) if races_response.status_code == 200 else []
+    races = [
+        {"round": int(r["round"]), "raceName": r["raceName"], "date": r["date"]}
+        for r in race_list
+    ]
+
+    # 4. Calcular leaderboard
+    users = User.query.all()
+    leaderboard = []
+    for user in users:
+        total = db.session.query(db.func.sum(Prediction.points)).filter_by(season=season, user_id=user.id).scalar()
+        leaderboard.append({"name": user.name, "total_points": total or 0})
+    leaderboard.sort(key=lambda x: x["total_points"], reverse=True)
+
+    # 5. Calcular next y last race
+    today = datetime.utcnow().date()
+    next_race_info = None
+    last_race_info = None
+    for race in race_list:
+        race_date = datetime.strptime(race["date"], "%Y-%m-%d").date()
+        if race_date >= today and not next_race_info:
+            next_race_info = race
+        elif race_date < today:
+            last_race_info = race
+
+    return jsonify({
+        "season": season,
+        "latest_season": latest_season,
+        "drivers": drivers,
+        "races": races,
+        "leaderboard": leaderboard,
+        "next_race_info": next_race_info,
+        "last_race_info": last_race_info
+    })
+
+
 # Ruta para obtener todas las temporadas disponibles
 @app.route("/get_all_seasons")
 def get_all_seasons():
@@ -416,18 +484,28 @@ def get_all_races(season):
 # Buscar los drivers del grid
 @app.route('/get_drivers/<year>', methods=['GET'])
 def get_drivers(year):
+    from data.driverStandings import driver_standings
     url = f"https://api.jolpi.ca/ergast/f1/{year}/drivers.json"
     response = requests.get(url)
-    
+
     if response.status_code == 200:
         data = response.json()
-        drivers = [
-            {"code": driver.get("code", driver["familyName"][:3].upper()), "name": f"{driver['givenName']} {driver['familyName']}"}
-            for driver in data.get("MRData", {}).get("DriverTable", {}).get("Drivers", [])  # 💡 Se asegura que siempre sea una lista
-         ]
-        return jsonify({"drivers": drivers})  # ✅ Devuelve un array seguro
-    
-    return jsonify({"drivers": []}), 500  # 🚨 Retorna un array vacío en caso de error
+        drivers = []
+
+        for driver in data.get("MRData", {}).get("DriverTable", {}).get("Drivers", []):
+            code = driver.get("code", driver["familyName"][:3].upper())
+            name = f"{driver['givenName']} {driver['familyName']}"
+            team = driver_standings.get(code, {}).get("team", "unknown")  # <-- ¡aquí!
+
+            drivers.append({ "code": code, "name": name, "team": team })
+
+        print("🧪 DRIVERS CON TEAM:", drivers)  # <-- debug temporal
+        return jsonify({"drivers": drivers})
+
+    return jsonify({"drivers": []}), 500
+
+
+
 
 #  Función para extraer datos clave de una carrera
 def extract_race_summary(results):
@@ -457,14 +535,25 @@ def leaderboard():
 # Ruta para Obtener Predicciones Guardadas
 @app.route('/get_predictions/<int:season>', methods=['GET'])
 def get_predictions(season):
-    predictions = Prediction.query.filter_by(season=season).all()  # ✅ Solo obtiene las del año
+    predictions = Prediction.query.filter_by(season=season).all()
     results = []
 
     for prediction in predictions:
         user = User.query.get(prediction.user_id)
+        race_results = get_race_results_internal(prediction.season, prediction.race)
+
+        bonus_data = calculate_points(prediction, race_results) if race_results else {
+            "points": prediction.points or 0,
+            "bullseye": False,
+            "hatTrick": False,
+            "udimpo": False,
+            "podium": False,
+            "omen": False
+        }
+
         results.append({
             "user": user.name,
-            "season": season,
+            "season": prediction.season,
             "race": prediction.race,
             "pole": prediction.pole,
             "p1": prediction.p1,
@@ -476,10 +565,16 @@ def get_predictions(season):
             "dnf": prediction.dnf,
             "best_of_the_rest": prediction.best_of_the_rest,
             "midfield_master": prediction.midfield_master,
-            "points": prediction.points
+            "points": bonus_data["points"],
+            "bullseye": bonus_data["bullseye"],
+            "hatTrick": bonus_data["hatTrick"],
+            "udimpo": bonus_data["udimpo"],
+            "podium": bonus_data["podium"],
+            "omen": bonus_data["omen"]
         })
-    
+
     return jsonify({"predictions": results})
+
 
 # Ruta para obtener las predicciones de una carrera específica
 @app.route('/get_race_predictions/<int:season>/<int:round>', methods=['GET'])

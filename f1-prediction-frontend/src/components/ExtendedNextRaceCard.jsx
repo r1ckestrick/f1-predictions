@@ -1,5 +1,4 @@
-import { Box, Typography, Card } from "@mui/material";
-import { Goal } from "lucide-react";
+import { Box, Typography, Card, Button } from "@mui/material";
 import { RACE_IMAGES } from "../data/raceImages";
 import RaceAlert from "./RaceAlert";
 import useRaceData from "../hooks/useRaceData";
@@ -161,26 +160,16 @@ export default function ExtendedNextRaceCard() {
       </Box>
 
       {/* Botón barra inferior */}
-      <Box
-  sx={{
-    backgroundColor: "#ff4655",
-    color: "white",
-    textAlign: "center",
-    py: 1.2,
-    fontWeight: "bold",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 1,
-    "&:hover": {
-      backgroundColor: "#e5394d"
-    },
-  }}
-  onClick={handlePredictClick}  // Esto debería redirigir al hacer clic
->
-  <Goal size={18} /> PREDICT
-</Box>
+            <Button
+        variant="contained"
+        color="primary"
+        onClick={() => navigate("/stats")}
+        fullWidth
+        sx={{ mt: 2 }}
+      >
+        Predecir
+      </Button>
+
 
     </Card>
   );

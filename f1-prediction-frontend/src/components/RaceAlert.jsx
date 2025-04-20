@@ -1,70 +1,91 @@
 import { Box, Typography } from "@mui/material";
+import { useEffect, useState } from "react";
 import dayjs from "dayjs";
+import utc from "dayjs/plugin/utc";
+import timezone from "dayjs/plugin/timezone";
 
-export default function RaceAlert({ race: raceData }) {
+dayjs.extend(utc);
+dayjs.extend(timezone);
 
-  if (!raceData || !raceData.date) return "Sin información";
+export default function RaceAlert({ race }) {
+  const [now, setNow] = useState(dayjs().tz("UTC"));
 
-  // 👇 Esto es clave para que funcione bien con dayjs
-  const today = dayjs();
-  const raceDate = dayjs(raceData.date + "T12:00:00");
-  const qualyDate = raceDate.subtract(1, "day");
-  
-  //  👀 Aquí puedes cambiar el color del alert creo?
-  let status = "";
-  let icon = "";
+  useEffect(() => {
+    const interval = setInterval(() => setNow(dayjs().tz("UTC")), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
+  if (!race || !race.date) return null;
 
-  // 🏁 Carrera finalizada
-  if (today.isAfter(raceDate, 'day')) {
-    status = raceData.has_official_results
-      ? "Carrera finalizada"
-      : "Carrera finalizada";
-    icon = "🏁";
+  const raceDate = dayjs(`${race.date}T14:00:00Z`);
+  const qualyDate = raceDate.subtract(1, "day").hour(14);
+  const fp3Date = raceDate.subtract(1, "day").hour(11);
+  const fp2Date = raceDate.subtract(2, "day").hour(14);
+  const fp1Date = raceDate.subtract(2, "day").hour(11);
+
+  const ranges = [
+    { name: "FP1", icon: "🟢", start: fp1Date, end: fp1Date.add(1.5, "hour") },
+    { name: "FP2", icon: "🟢", start: fp2Date, end: fp2Date.add(1.5, "hour") },
+    { name: "FP3", icon: "🟢", start: fp3Date, end: fp3Date.add(1.5, "hour") },
+    { name: "Qualy", icon: "🔴", start: qualyDate, end: qualyDate.add(2, "hour") },
+    { name: "Carrera", icon: "🚦", start: raceDate, end: raceDate.add(2, "hour") },
+  ];
+
+  let label = "⏳ Próxima sesión no definida";
+  let styleColor = "#ff4655";
+
+  // En vivo
+  for (const session of ranges) {
+    if (now.isAfter(session.start) && now.isBefore(session.end)) {
+      label = `${session.icon} ${session.name} en vivo`;
+      break;
+    }
   }
-  // 🚦 Carrera en vivo (día de carrera)
-  if (today.isSame(raceDate, 'day')) {
-    status = "Carrera en vivo!";
-    icon = "🚦";
+
+  // Próxima sesión
+  if (label.includes("no definida")) {
+    const next = ranges.find(r => now.isBefore(r.start));
+    if (next) {
+      const diffSeconds = next.start.diff(now, "second");
+      const hours = Math.floor(diffSeconds / 3600);
+      const minutes = Math.floor((diffSeconds % 3600) / 60);
+      const seconds = diffSeconds % 60;
+
+      let timeText = "";
+      if (hours > 0) timeText += `${hours}h `;
+      if (minutes > 0 || hours > 0) timeText += `${minutes}m `;
+      timeText += `${seconds}s`;
+
+      label = `⏱️ ${next.name} en ${timeText}`;
+    } else {
+      label = race.has_official_results ? "🏁 Carrera finalizada" : "🏁 Carrera completada";
+    }
   }
-  // 🔴 Qualy en vivo (día de qualy)
-  if (today.isSame(qualyDate, 'day')) {
-    status = "Qualy en vivo!";
-    icon = "🔴";
-  }
-  // ⏱️ Faltan horas para la carrera (entre qualy y carrera)
-  if (today.isAfter(qualyDate) && today.isBefore(raceDate)) {
-    status = "Faltan horas para la carrera";
-    icon = "⏱️";
-  }
-  // ⏱️ Faltan horas para la qualy (si es el día anterior pero ya es hora cercana)
-  if (qualyDate.diff(today, 'day') === 0) {
-    status = "Faltan horas para la qualy";
-        icon = "⏱️";
-  }
-  // ⏳ Todavía puedes predecir (más de un día antes)
-  if (today.isBefore(qualyDate)) {
-    const daysLeft = qualyDate.diff(today, 'day');
-    status = `Quedan ${daysLeft} día${daysLeft > 1 ? 's' : ''} para hacer tu predicción.`;
-        icon = "⏳";
-  }
-  
+
   return (
     <Box
       sx={{
-        bgcolor: `#ff4655` || "#1c1c1e",
-        border: `1px solid #ff4655`,
+        bgcolor: styleColor,
+        border: `1px solid ${styleColor}`,
         borderRadius: 3,
         px: 1,
         py: 0.3,
         mb: 1,
         opacity: "85%",
         textAlign: "center",
-        boxShadow: "0 0 8px rgba(39, 39, 39, 0.04)",
+        boxShadow: "0 0 8px rgba(39, 39, 39, 0.04)"
       }}
     >
-      <Typography variant="caption" color="white" fontWeight="bold" display="flex" alignItems="center" justifyContent="center" gap={1}>
-        {icon} {status}
+      <Typography
+        variant="caption"
+        color="white"
+        fontWeight="bold"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        gap={1}
+      >
+        {label}
       </Typography>
     </Box>
   );

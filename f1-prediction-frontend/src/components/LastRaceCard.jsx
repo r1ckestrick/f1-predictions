@@ -2,7 +2,7 @@ import { Box, Typography, Avatar, Paper } from "@mui/material";
 import { PLAYERS } from "../data/players";
 import { RACE_IMAGES } from "../data/raceImages";
 
-export default function LastRaceCard({ race, winner }) {
+export default function LastRaceCard({ race, winner, onClick }) {
   if (!race) return null;
 
   const raceAssets = RACE_IMAGES[race.raceName] || {};
@@ -15,18 +15,25 @@ export default function LastRaceCard({ race, winner }) {
 
   return (
     <Box
-      mb={3}
-      sx={{
-        height: 130,
-        borderRadius: 2,
-        backgroundImage: `url(${raceImage})`,
-        backgroundSize: "cover",
-        backgroundPosition: "center",
-        position: "relative",
-        overflow: "hidden",
-        boxShadow: "0 0 4px rgba(255,255,255,0.05)",
-      }}
-    >
+        onClick={onClick}
+        mb={3}
+        sx={{
+          height: 130,
+          borderRadius: 2,
+          backgroundImage: `url(${raceImage})`,
+          backgroundSize: "cover",
+          backgroundPosition: "center",
+          position: "relative",
+          overflow: "hidden",
+          boxShadow: "0 0 4px rgba(255,255,255,0.05)",
+          cursor: onClick ? "pointer" : "default",
+          transition: "transform 0.2s ease, box-shadow 0.2s ease",
+          "&:hover": {
+            transform: onClick ? "scale(1.01)" : "none",
+            boxShadow: onClick ? "0 0 8px rgba(255,255,255,0.2)" : "none"
+          }
+        }}
+      >
       <Box sx={{ position: "absolute", inset: 0, background: "rgba(0,0,0,0.5)" }} />
 
       <Box

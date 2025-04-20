@@ -1,0 +1,23 @@
+driver_standings = {
+    "VER": {"team": "redbull"},
+    "TSU": {"team": "redbull"},
+    "ANT": {"team": "mercedes"},
+    "RUS": {"team": "mercedes"},
+    "LEC": {"team": "ferrari"},
+    "HAM": {"team": "ferrari"},
+    "NOR": {"team": "mclaren"},
+    "PIA": {"team": "mclaren"},
+    "ALO": {"team": "astonmartin"},
+    "STR": {"team": "astonmartin"},
+    "ALB": {"team": "williams"},
+    "SAI": {"team": "williams"},
+    "DOO": {"team": "alpine"},
+    "GAS": {"team": "alpine"},
+    "HAD": {"team": "visarb"},
+    "LAW": {"team": "visarb"},
+    "BOR": {"team": "stake"},
+    "HUL": {"team": "stake"},
+    "OCO": {"team": "haas"},
+    "BEA": {"team": "haas"},
+    # Puedes añadir más si los necesitas
+}
